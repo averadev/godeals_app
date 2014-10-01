@@ -1,0 +1,66 @@
+settings = {
+
+	orientation = {
+    },
+
+    plugins = {
+        ["facebook"] =
+        {
+            publisherId = "com.coronalabs",
+            supportedPlatforms = { iphone=true, ["iphone-sim"]=true },
+        },
+    },
+    
+    android = {
+        usesPermissions = {
+            "android.permission.INTERNET",
+            "android.permission.ACCESS_FINE_LOCATION",
+            "android.permission.ACCESS_COARSE_LOCATION",
+        }
+    },
+
+    iphone = {
+        plist = {
+            CFBundleIconFiles = {
+            "Icon.png",
+            "Icon@2x.png",
+            "Icon-Small-40.png",
+            "Icon-Small-40@2x.png",
+            "Icon-60.png",
+            "Icon-60@2x.png",
+            "Icon-72.png",
+            "Icon-72@2x.png",
+            "Icon-76.png",
+            "Icon-76@2x.png",
+            "Icon-Small-50.png",
+            "Icon-Small-50@2x.png",
+            "Icon-Small.png",
+            "Icon-Small@2x.png"
+            },
+            
+
+            UIApplicationExitsOnSuspend = false,
+            FacebookAppID = "750089858383563",  --replace XXXXXXXXXX with your Facebook App ID
+            CFBundleURLTypes = {
+                {
+                CFBundleURLSchemes = { "fb750089858383563", }  --replace XXXXXXXXXX with your Facebook App ID
+                }
+            },
+
+            ["URL types"] = {
+                item = {
+                    ["URL Schemes"] =
+                        { ["Item 0"] = "fb750089858383563" },  --replace XXXXXXXXXX with your Facebook App ID
+                },
+            },
+        },
+        UIAppFonts = {
+            "Chivo-Black.ttf",
+            "Chivo-BlackItalic.ttf",
+            "Chivo-Italic.ttf",
+            "Chivo-Regular.ttf"
+        },
+    },
+    
+    
+}
