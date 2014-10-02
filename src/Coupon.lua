@@ -24,7 +24,7 @@ local mapG
 local currentX = midW
 local currentI = 0
 local leftX, rightX
-local screen, group, txtTitle, initX, initCompX
+local screen, group, txtTitle, initX, initCompX, hC
 
 
 ---------------------------------------------------------------------------------
@@ -221,16 +221,16 @@ end
 function getPage(setX, i)
     if page[i] == nil then
         -- Generamos pagina
-        page[i] = display.newContainer( intW, intH - 65 )
+        page[i] = display.newContainer( intW, intH - 65 + hC )
         page[i].x = setX
         page[i].y = midH + 33
         group:insert( page[i] )
         
         scroll[i] = widget.newScrollView {
             left = -midW,
-            top = -midH + 32,
+            top = -midH + 32 + hC,
             width = intW+2,
-            height = intH - 65,
+            height = intH - 65 + hC,
             id = "onBottom",
             horizontalScrollDisabled = false,
             verticalScrollDisabled = false,
@@ -701,15 +701,19 @@ function scene:createScene( event )
     
     -- Background
     local background = display.newRect(midW, midH, intW , intH)
-    background:setFillColor(0.8, 0.8, 0.8)
+    background:setFillColor(0)
     screen:insert(background)
     
+    -- Height status bar
+    hC = display.topStatusBarContentHeight
+    
     -- Creamos toolbar
-    local titleBar = display.newRect( display.contentCenterX, 0, display.contentWidth, 65 )
-    titleBar:setFillColor( titleGradient ) 
-    titleBar.y = display.screenOriginY + titleBar.contentHeight * 0.5
+    local titleBar = display.newRect( display.contentCenterX, hC, display.contentWidth, 65 )
+    titleBar.anchorY = 0;
+    titleBar:setFillColor( 0 ) 
     screen:insert(titleBar)
-    local lineBar = display.newRect( display.contentCenterX, 63, display.contentWidth, 5 )
+    
+    local lineBar = display.newRect( display.contentCenterX, 63 + hC, display.contentWidth, 5 )
     lineBar:setFillColor( {
             type = 'gradient',
             color1 = { 0, .7, 0, 1 }, 
@@ -720,11 +724,11 @@ function scene:createScene( event )
 
     local btnReturn = display.newImage("img/btn/left.png", true) 
     btnReturn.x = 35
-    btnReturn.y = 35
+    btnReturn.y = 35 + hC
     screen:insert(btnReturn)
     btnReturn:addEventListener( "tap", gotoMain )
     
-    txtTitle = display.newText( "", midW + 15, 35, "Chivo", 24)
+    txtTitle = display.newText( "", midW + 15, 35 + hC, "Chivo", 24)
     txtTitle:setFillColor( 1 )
     screen:insert( txtTitle )
     
@@ -745,9 +749,6 @@ function scene:enterScene( event )
     if not (currentI == #Globals.Items) then
         getPage(rightX, currentI+1) -- Right
     end
-    
-    local h = display.topStatusBarContentHeight
-    native.showAlert( "Go Deals", h, { "OK"})
     
 end
 

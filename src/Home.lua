@@ -660,6 +660,9 @@ function scene:createScene( event )
 	local screenGroup = self.view
     screenGroup:insert(homeScreen)
     
+    -- Height status bar
+    local h = display.topStatusBarContentHeight
+    
     -- Gradiente del toolbar
     local titleGradient = {
         type = 'gradient',
@@ -669,11 +672,11 @@ function scene:createScene( event )
     }
     
     -- Lista de Cupones
-    svHeightY[1] = intH - 103
+    svHeightY[1] = intH - 63 + h
     scrollView = widget.newScrollView
     {
         left = 0,
-        top = 105,
+        top = 65 + h,
         width = intW+2,
         height = svHeightY[1],
         id = "onBottom",
@@ -684,32 +687,41 @@ function scene:createScene( event )
     }
     homeScreen:insert(scrollView)
     svHeightY[2] = scrollView.y
-
+    
     -- Creamos toolbar
-    local titleBar = display.newRect( display.contentCenterX, 0, display.contentWidth, 105 )
-    titleBar:setFillColor( titleGradient ) 
-    titleBar.y = display.screenOriginY + titleBar.contentHeight * 0.5
+    local titleBar = display.newRect( display.contentCenterX, h, display.contentWidth, 65 )
+    titleBar.anchorY = 0;
+    titleBar:setFillColor( 0 ) 
 	homeScreen:insert(titleBar)
+    
+    local lineBar = display.newRect( display.contentCenterX, 63 + h, display.contentWidth, 5 )
+    lineBar:setFillColor( {
+            type = 'gradient',
+            color1 = { 0, .7, 0, 1 }, 
+            color2 = { 0, .7, 0, .5 },
+            direction = "bottom"
+        } ) 
+    homeScreen:insert(lineBar)
     
     btnMenu = display.newImage("img/btn/logo.png", true) 
 	btnMenu.x = 45
-	btnMenu.y = 70
+	btnMenu.y = 30 + h
 	homeScreen:insert(btnMenu)
     btnMenu:addEventListener( "tap", showMenu )
     
-    title = display.newText( "", 230, 72, "Chivo", 22)
+    title = display.newText( "", 230, 30 + h, "Chivo", 22)
     title:setFillColor( .8, .8, .8 )
     homeScreen:insert(title)
 
     fav = display.newImage("img/btn/btnMenuStar.png", true) 
 	fav.x = intW - 100
-	fav.y = 70
+	fav.y = 30 + h
 	homeScreen:insert(fav)
     -- fav:addEventListener( "tap", loadFav )
 
     local search = display.newImage("img/btn/btnMenuMapa.png", true) 
 	search.x = intW - 40
-	search.y = 70
+	search.y = 30 + h
 	homeScreen:insert(search)
     search:addEventListener( "tap", showMap )
     
@@ -818,7 +830,7 @@ function scene:createScene( event )
     
     clearTempDir()
     if networkConnection() then
-        loadBy(3)
+        loadBy(1)
     else
         loadingGrp.alpha = 0
         NoConnGrp.alpha = 1

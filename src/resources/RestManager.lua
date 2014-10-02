@@ -47,7 +47,6 @@ local RestManager = {}
             else
                 local data = json.decode(event.response)
                 if data.success then
-                    if (type==3 or type==4) and subtype == nil then loadSubmenu(data.submenu, type) end
                     loadImages(data.items)
                 else
                     native.showAlert( "Go Deals", data.message, { "OK"})
