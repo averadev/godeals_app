@@ -20,10 +20,11 @@ local midW = display.contentCenterX
 local midH = display.contentCenterY
 local page = {}
 local scroll = {}
+local mapG
 local currentX = midW
 local currentI = 0
 local leftX, rightX
-local screen, group, initX, initCompX
+local screen, group, txtTitle, initX, initCompX
 
 
 ---------------------------------------------------------------------------------
@@ -34,6 +35,49 @@ function gotoMain(event)
         time = 400,
         effect = "crossFade"
     })
+end
+
+function tapPageMap(event)
+    if mapG == nil then
+        mapG = display.newGroup()
+        local bgShape = display.newRect( midW, intH + 138, intW, 286 )
+        bgShape:setFillColor( 0 )
+        mapG:insert( bgShape )
+        local imgMin = display.newImage("img/btn/btnMinMap.png")
+        imgMin.x, imgMin.y = intW - 30, intH - 20
+        imgMin:addEventListener( "tap", tapPageMap )
+        mapG:insert( imgMin )
+
+       transition.to( mapG, {time=600, y = mapG.y - 280, transition=easing.outExpo, 
+            onComplete = function()
+                -- Crear mapa
+                local mapC = native.newMapView( midW, intH + 140, 480, 280 )
+                mapC:setCenter( 21.154425, -86.820303, 0.01, 0.01 )
+                mapG:insert(mapC)
+                -- Agregar marcador
+                mapC:addMarker( 21.154425, -86.820303, { title = "Nombre Comercio", listener = markerListener} )
+            end
+        })
+    else
+        transition.to( mapG, {time=600, y = mapG.y + 300, transition=easing.outExpo, 
+            onComplete = function()
+                -- Remove map
+                mapG:removeSelf()
+                mapG = nil
+            end           
+        })
+    end
+end
+
+function tapPageFav(event)
+    t = event.target
+    if t.isMark then
+        t.isMark = false
+        t:setFillColor( .2 )
+    else
+        t.isMark = true
+        t:setFillColor( 0 )
+    end
 end
 
 function touchListener (event) 
@@ -86,6 +130,14 @@ function touchListener (event)
 end
 
 local function movePage(toRight)
+     -- Verificar mapa
+    if not (mapG == nil) then
+        transition.to( mapG, {time=200, y = mapG.y + 300, transition=easing.outExpo, onComplete = function()
+            mapG:removeSelf()
+            mapG = nil 
+        end })
+    end
+    
     -- Traer siguiente
     if toRight then
         -- Mover
@@ -101,7 +153,7 @@ local function movePage(toRight)
                 getPage(rightX, currentI + 1)
             end 
             -- Scroll to Top
-            scroll[currentI - 1]:scrollTo( "top" )
+            -- scroll[currentI - 1]:scrollTo( "top" )
         end, 1 )
         
     -- Traer anterior
@@ -119,7 +171,7 @@ local function movePage(toRight)
                 getPage(leftX, currentI - 1)
             end       
             -- Scroll to Top
-            scroll[currentI + 1]:scrollTo( "top" )
+            --scroll[currentI + 1]:scrollTo( "top" )
         end, 1 )
     end
 end
@@ -169,16 +221,16 @@ end
 function getPage(setX, i)
     if page[i] == nil then
         -- Generamos pagina
-        page[i] = display.newContainer( intW, intH - 105 )
+        page[i] = display.newContainer( intW, intH - 65 )
         page[i].x = setX
-        page[i].y = midH + 53
+        page[i].y = midH + 33
         group:insert( page[i] )
         
         scroll[i] = widget.newScrollView {
             left = -midW,
-            top = -midH + 52,
+            top = -midH + 32,
             width = intW+2,
-            height = intH - 105,
+            height = intH - 65,
             id = "onBottom",
             horizontalScrollDisabled = false,
             verticalScrollDisabled = false,
@@ -535,95 +587,105 @@ end
 function buildCoupon(item, i)
     
     -- Title Detail
-    local titleShape = display.newRect( midW, 50, 440, 60 )
-    titleShape:setFillColor( 0 )
-    scroll[i]:insert( titleShape )
-    local titleInShape = display.newRect( midW, 50, 430, 50 )
-    titleInShape:setFillColor( .4, .81, 0 )
-    scroll[i]:insert( titleInShape )
-    local title = display.newText( item.title, midW, 50, "Chivo", 24)
-    title:setFillColor( 0 )
-    scroll[i]:insert( title )
+    txtTitle.text = item.title
     
     -- Agregamos imagen
-    local imgShape = display.newRect( midW, 260, 444, 334 )
+    local imgShape = display.newRect( midW, 217, 444, 398 )
     imgShape:setFillColor( .4 )
     scroll[i]:insert( imgShape )
     local img = display.newImage(item.image, system.TemporaryDirectory)
-    img.x, img.y = midW, 260
+    img.x, img.y = midW, 185
     img.width, img.height  = 440, 330
     scroll[i]:insert( img )
+    -- Boton de Mapa
+    local shapeL = display.newRect( midW - 110, 383, 218, 60 )
+    shapeL:setFillColor( .2 )
+    shapeL:addEventListener( "tap", tapPageMap )
+    scroll[i]:insert( shapeL )
+    local mapIcon = display.newImage("img/btn/detailMap.png")
+    mapIcon.x, mapIcon.y = 50, 382
+    scroll[i]:insert( mapIcon )
+    local mapTxt = display.newText( "Mostrar Mapa", midW - 100, 382, "Chivo", 20)
+    mapTxt:setFillColor( 1 )
+    scroll[i]:insert( mapTxt )
+    -- Boton de Fav
+    local shapeR = display.newRect( midW + 110, 383, 218, 60 )
+    shapeR.isMark = false
+    shapeR:setFillColor( .2 )
+    shapeR:addEventListener( "tap", tapPageFav )
+    scroll[i]:insert( shapeR )
+    local favIcon = display.newImage("img/btn/detailFav.png")
+    favIcon.x, favIcon.y = midW + 32, 382
+    scroll[i]:insert( favIcon )
+    local favTxt = display.newText( "Agregar a Fav.", midW + 127, 382, "Chivo", 20)
+    favTxt:setFillColor( 1 )
+    scroll[i]:insert( favTxt )
     
+    -- Banner color
+    local detailShape = display.newRect( midW, 507, 480, 135 )
+    detailShape:setFillColor( {
+        type = 'gradient',
+        color1 = { 0, .4, 0, .7 }, 
+        color2 = { 0, .3, 0, 1 },
+        direction = "bottom"
+    } )
+    scroll[i]:insert( detailShape )
     -- Place Detail
     local dImg1 = display.newImage("img/btn/detailPlace.png")
-    dImg1.x, dImg1.y = 60, 460
+    dImg1.x, dImg1.y = 60, 480
     scroll[i]:insert( dImg1 )
-    local dTxt1 = display.newText( item.subtitle1, 280, 465, 350, 24,  "Chivo", 20)
-    dTxt1:setFillColor( 0 )
+    local dTxt1 = display.newText( item.subtitle1, 280, 480, 350, 24,  "Chivo", 20)
+    dTxt1:setFillColor( 1 )
     scroll[i]:insert( dTxt1 )
-    
     -- Vigency Detail
     local dImg3 = display.newImage("img/btn/detailVigencia.png")
-    dImg3.x, dImg3.y = 60, 510
+    dImg3.x, dImg3.y = 60, 540
     scroll[i]:insert( dImg3 )
-    local dImg3 = display.newText( item.validity, 280, 515, 350, 24,  "Chivo", 20)
-    dImg3:setFillColor( 0 )
+    local dImg3 = display.newText( item.validity, 280, 540, 350, 24,  "Chivo", 20)
+    dImg3:setFillColor( 1 )
     scroll[i]:insert( dImg3 )
-    
-    -- Add button
-    local addShape = display.newRect( midW, 580, 440, 60 )
-    addShape:setFillColor( 0 )
-    scroll[i]:insert( addShape )
-    local addInShape = display.newRect( midW, 580, 430, 50 )
-    addInShape:setFillColor( 1 )
-    scroll[i]:insert( addInShape )
-    local addIcon = display.newImage("img/btn/favOut.png")
-    addIcon.x, addIcon.y = 60, 580
-    scroll[i]:insert( addIcon )
-    local addTxt = display.newText( "Agregar a favoritos", midW, 580, "Chivo", 24)
-    addTxt:setFillColor( 0 )
-    scroll[i]:insert( addTxt )
-    
-    -- Separador
-    local sp1 = display.newRect( midW, 630, 340, 2 )
-    sp1:setFillColor( .8 )
-    scroll[i]:insert( sp1 )
+        
+    -- Descripcion
+    local descTitle = display.newText( "Detalle de la promoción:", midW, 610, "Chivo", 24)
+    descTitle:setFillColor( 0 )
+    scroll[i]:insert( descTitle )
+    local descTxt = display.newText( item.clauses, 240, 690, 430, 0,  "Chivo", 16)
+    descTxt:setFillColor( 0 )
+    scroll[i]:insert( descTxt )
+    local lastY = 580 + (descTxt.contentHeight / 2) + 50
+    descTxt.y = lastY
+    lastY = lastY + (descTxt.contentHeight / 2) + 50
     
     -- Terminos y condiciones
-    local termTitle = display.newText( "Terminos y condiciones:", midW, 660, "Chivo", 24)
-    termTitle:setFillColor( 0 )
+    local termShape = display.newRect( midW, lastY, 480, 135 )
+    termShape:setFillColor( {
+        type = 'gradient',
+        color1 = { 0, .4, 0, .7 }, 
+        color2 = { 0, .3, 0, 1 },
+        direction = "bottom"
+    } )
+    scroll[i]:insert( termShape )
+    local termTitle = display.newText( "Terminos y condiciones:", midW, lastY, "Chivo", 24)
+    termTitle:setFillColor( 1 )
     scroll[i]:insert( termTitle )
-    local termTxt = display.newText( item.clauses, 240, 690, 430, 0,  "Chivo", 16)
-    termTxt:setFillColor( 0 )
+    local termTxt = display.newText( item.clauses, 240, lastY, 430, 0,  "Chivo", 16)
+    termTxt:setFillColor( 1 )
     scroll[i]:insert( termTxt )
-    
-    local lastY = 630 + (termTxt.contentHeight / 2) + 50
+    -- Move Text
+    lastY = lastY + (termTxt.contentHeight / 2) + 25
     termTxt.y = lastY
-    
-    -- Separador
+    -- Move Shape
+    termShape.height = termTxt.contentHeight + 70
+    termShape.y = lastY - 15
     lastY = lastY + (termTxt.contentHeight / 2) + 15
-    local sp2 = display.newRect( midW, lastY, 340, 2 )
-    sp2:setFillColor( .8 )
-    scroll[i]:insert( sp2 )
     
-    -- Show Map
-    local mapShape = display.newRect( midW, lastY + 55, 440, 60 )
-    mapShape:setFillColor( 0 )
-    scroll[i]:insert( mapShape )
-    local mapInShape = display.newRect( midW, lastY + 55, 430, 50 )
-    mapInShape:setFillColor( 1 )
-    scroll[i]:insert( mapInShape )
-    local mapIcon = display.newImage("img/btn/detailMapOut.png")
-    mapIcon.x, mapIcon.y = 60, lastY + 55
-    scroll[i]:insert( mapIcon )
-    local mapTxt = display.newText( "Mostrar Ubicación", midW, lastY + 55, "Chivo", 24)
-    mapTxt:setFillColor( 0 )
-    scroll[i]:insert( mapTxt )
-    
-    -- Ended
-    local sp3 = display.newRect( 0, lastY + 130, 0, 1 )
-    sp3:setFillColor( 1 )
-    scroll[i]:insert( sp3 )
+    -- Publicidad
+    local publiShape = display.newRect( midW, lastY + 65, 480, 130 )
+    publiShape:setFillColor( 0.8, 0.8, 0.8 )
+    scroll[i]:insert( publiShape )
+    local publicidad = display.newImage("img/btn/publicidad.png")
+    publicidad.x, publicidad.y = midW, lastY + 55
+    scroll[i]:insert( publicidad )
     
 end
 
@@ -643,16 +705,28 @@ function scene:createScene( event )
     screen:insert(background)
     
     -- Creamos toolbar
-    local titleBar = display.newRect( display.contentCenterX, 0, display.contentWidth, 105 )
+    local titleBar = display.newRect( display.contentCenterX, 0, display.contentWidth, 65 )
     titleBar:setFillColor( titleGradient ) 
     titleBar.y = display.screenOriginY + titleBar.contentHeight * 0.5
     screen:insert(titleBar)
+    local lineBar = display.newRect( display.contentCenterX, 63, display.contentWidth, 5 )
+    lineBar:setFillColor( {
+            type = 'gradient',
+            color1 = { 0, .7, 0, 1 }, 
+            color2 = { 0, .7, 0, .5 },
+            direction = "bottom"
+        } ) 
+    screen:insert(lineBar)
 
     local btnReturn = display.newImage("img/btn/left.png", true) 
     btnReturn.x = 35
-    btnReturn.y = 70
+    btnReturn.y = 35
     screen:insert(btnReturn)
     btnReturn:addEventListener( "tap", gotoMain )
+    
+    txtTitle = display.newText( "", midW + 15, 35, "Chivo", 24)
+    txtTitle:setFillColor( 1 )
+    screen:insert( txtTitle )
     
     -- Generamos contenedor
     group = display.newGroup()

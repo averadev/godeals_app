@@ -818,7 +818,7 @@ function scene:createScene( event )
     
     clearTempDir()
     if networkConnection() then
-        loadBy(1)
+        loadBy(3)
     else
         loadingGrp.alpha = 0
         NoConnGrp.alpha = 1
