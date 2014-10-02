@@ -746,6 +746,9 @@ function scene:enterScene( event )
         getPage(rightX, currentI+1) -- Right
     end
     
+    local h = display.topStatusBarContentHeight
+    native.showAlert( "Go Deals", h, { "OK"})
+    
 end
 
 -- Remove Listener
