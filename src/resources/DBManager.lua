@@ -34,29 +34,13 @@ local dbManager = {}
 		return 1
 	end
 
-	dbManager.saveCoupons = function(coupons)
-		openConnection( )
-        -- Delete old coupons
-        query = "DELETE FROM coupons;"
-        db:exec( query )
-        -- Insert new coupons
-        for z = 1, #coupons, 1 do 
-            query = "INSERT INTO coupons (id, image, description)"
-            query = query.." VALUES ('"..coupons[z].id.."', '"..coupons[z].image.."', '"..coupons[z].description.."');"
-            db:exec( query )
-        end
-    
-		closeConnection( )
-		return 1
-	end
-
-    dbManager.updateUser = function(email, password, name, fbId)
+    dbManager.updateUser = function(idApp, email, password, name, fbId)
 		openConnection( )
         local query = ''
         if fbId == '' then
-            query = "UPDATE config SET email = '"..email.."', password = '"..password.."';"
+            query = "UPDATE config SET idApp = "..idApp..", email = '"..email.."', password = '"..password.."';"
         else
-            query = "UPDATE config SET email = '"..email.."', name = '"..name.."', fbId = '"..fbId.."';"
+            query = "UPDATE config SET idApp = "..idApp..", email = '"..email.."', name = '"..name.."', fbId = '"..fbId.."';"
         end
         db:exec( query )
 		closeConnection( )
@@ -64,7 +48,7 @@ local dbManager = {}
 
     dbManager.clearUser = function()
         openConnection( )
-        query = "UPDATE config SET email = '', password = '', name = '', fbId = '';"
+        query = "UPDATE config SET idApp = 0, email = '', password = '', name = '', fbId = '';"
         db:exec( query )
 		closeConnection( )
     end
@@ -73,26 +57,21 @@ local dbManager = {}
 	dbManager.setupSquema = function()
 		openConnection( )
 		
-		local query = "CREATE TABLE IF NOT EXISTS config (id INTEGER PRIMARY KEY, email TEXT, password TEXT, name TEXT, fbId TEXT, url TEXT);"
+		local query = "CREATE TABLE IF NOT EXISTS config (id INTEGER PRIMARY KEY, idApp INTEGER, email TEXT, password TEXT, name TEXT, fbId TEXT, url TEXT);"
 		db:exec( query )
 
         -- Return if have connection
-		for row in db:nrows("SELECT email, fbId FROM config;") do
+		for row in db:nrows("SELECT idApp FROM config;") do
             closeConnection( )
-            if row.email == '' and row.fbId == '' then
+            if row.idApp == 0 then
                 return false
             else
                 return true
             end
 		end
-    
-        -- Coupon table
-        query = "CREATE TABLE IF NOT EXISTS coupons (id INTEGER PRIMARY KEY, image TEXT, partner TEXT, "
-		query = query .. "description TEXT, validity TEXT, fav INTEGER);"
-		db:exec( query )
         
         -- Populate config
-        query = "INSERT INTO config VALUES (1,'', '', '', '', 'http://192.168.1.198/godeals/');"
+        query = "INSERT INTO config VALUES (1, 0, '', '', '', '', 'http://192.168.1.197/godeals/');"
         
 		db:exec( query )
     

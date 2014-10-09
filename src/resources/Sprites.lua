@@ -20,6 +20,16 @@ Sprites.loading = {
   }
 }
 
+Sprites.fav = {
+  source = "img/btn/detailFav.png",
+  frames = {width=22, height=19, numFrames=6},
+  sequences = {
+      { name = "stop", loopCount = 1, start = 1, count=1},
+      { name = "isFav", loopCount = 1, start = 6, count=1},
+      { name = "play", time=300, start = 1, count=6, loopCount=1}
+  }
+}
+
 Sprites.red = {
   source = "img/btn/red.png",
   frames = {width=40, height=40, numFrames=4},

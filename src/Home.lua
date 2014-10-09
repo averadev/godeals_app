@@ -21,8 +21,8 @@ local menuScreen = Menu:new()
 local homeScreen = display.newGroup()
 
 -- Objects
-local scrollView, subMenuGrp, restMenuGrp, settings, mask 
-local btnMenu, loading, title, loadingGrp, NoConnGrp, fav
+local scrollView, menuGrp, subMenuGrp, restMenuGrp, settings, mask 
+local btnMenu, loading, title, loadingGrp, NoConnGrp
 local svHeightY = {}
 local coupons = {}
 local imageItems = {}
@@ -88,10 +88,25 @@ function logout()
     })
 end
 
+function showFav(event)
+    if isHome then
+        hideRestMenus()
+        cleanHome()
+        hideSubmenu()
+        noCallback = noCallback + 1
+        RestManager.getFav()
+        title.text = "Favoritos"
+    end
+end
+
 function showMap(event)
     if isHome then
         storyboard.gotoScene( "src.Map", { time = 400, effect = "crossFade" })
     end
+end
+
+function doFilter(event)
+    
 end
 
 function getSubMenu(event)
@@ -280,34 +295,43 @@ end
 
 -- Armamos el submenu
 function loadSubmenu(items, type)
-    local spcIcn = ((6 - #items) * 40)
-    for z = 1, #items, 1 do 
-        local newX = ((z * 80) - 40) + spcIcn
-        submenu[z] = display.newImage("img/btn/submenu".. items[z].id ..".png", true) 
-        submenu[z].x = newX
-        submenu[z].y = intH - 35
-        submenu[z].type = type
-        submenu[z].subtype = items[z].id
-        submenu[z]:addEventListener( "tap", getSubMenu )
-        subMenuGrp:insert(submenu[z])
+    if not(subMenuGrp.y == 0) then
+        -- Show filter menu
+        menuGrp.x = -60
+        title.x = 230
         
-        submenuTxt[z] = display.newText( Globals.CouponType[tonumber(items[z].id)], newX, intH - 18, "Chivo", 10)
-        submenuTxt[z]:setFillColor( 1 )
-        subMenuGrp:insert(submenuTxt[z]) 
-        
-        if z < #items then 
-            submenuline[z] = display.newRect( newX + 40, intH - 35, 2, 70 )
-            subMenuGrp:insert(submenuline[z])
+        local spcIcn = ((6 - #items) * 40)
+        for z = 1, #items, 1 do 
+            local newX = ((z * 80) - 40) + spcIcn
+            submenu[z] = display.newImage("img/btn/submenu".. items[z].id ..".png", true) 
+            submenu[z].x = newX
+            submenu[z].y = intH - 35
+            submenu[z].type = type
+            submenu[z].subtype = items[z].id
+            submenu[z]:addEventListener( "tap", getSubMenu )
+            subMenuGrp:insert(submenu[z])
+
+            submenuTxt[z] = display.newText( Globals.CouponType[tonumber(items[z].id)], newX, intH - 18, "Chivo", 10)
+            submenuTxt[z]:setFillColor( 1 )
+            subMenuGrp:insert(submenuTxt[z]) 
+
+            if z < #items then 
+                submenuline[z] = display.newRect( newX + 40, intH - 35, 2, 70 )
+                subMenuGrp:insert(submenuline[z])
+            end
+
         end
-        
+        transition.to( subMenuGrp, { time=500, y = 0 } )
     end
-    transition.to( subMenuGrp, { time=500, y = 0 } )
-    transition.to( scrollView, { time=500, height = svHeightY[1] - 70, y = svHeightY[2] - 35 } )
 end
 
 -- Limpiamos botones y ocultamos la barra
 function hideSubmenu()
-    if subMenuGrp.y == 0 then
+    if subMenuGrp.x < 0 then
+        -- Hide filter menu
+        menuGrp.x = -60
+        title.x = 255
+        
         for z = 1, #submenu, 1 do 
             submenu[z]:removeEventListener( "tap", getSubMenu )
             submenu[z]:removeSelf()
@@ -320,7 +344,6 @@ function hideSubmenu()
             submenuline[z] = nil
         end
         transition.to( subMenuGrp, { time=500, y = 70 } )
-        transition.to( scrollView, { time=500, height = svHeightY[1], y = svHeightY[2] } )
     end
 end
 
@@ -358,6 +381,7 @@ function loadImage(posc)
     end
     -- Do call image
     
+    Globals.Items[posc].idCupon = Globals.Items[posc].id
     Globals.Items[posc].id = posc
     local path = system.pathForFile( Globals.Items[posc].image, system.TemporaryDirectory )
     local fhd = io.open( path )
@@ -680,6 +704,7 @@ function scene:createScene( event )
         width = intW+2,
         height = svHeightY[1],
         id = "onBottom",
+        friction = .8,
         horizontalScrollDisabled = true,
         verticalScrollDisabled = false,
         listener = scrollListener,
@@ -695,43 +720,51 @@ function scene:createScene( event )
 	homeScreen:insert(titleBar)
     
     local lineBar = display.newRect( display.contentCenterX, 63 + h, display.contentWidth, 5 )
-    lineBar:setFillColor( {
-            type = 'gradient',
-            color1 = { 0, .7, 0, 1 }, 
-            color2 = { 0, .7, 0, .5 },
-            direction = "bottom"
-        } ) 
+    lineBar:setFillColor({
+        type = 'gradient',
+        color1 = { 0, 1, 0, 1 }, 
+        color2 = { 0, .5, 0, .5 },
+        direction = "bottom"
+    }) 
     homeScreen:insert(lineBar)
     
-    btnMenu = display.newImage("img/btn/logo.png", true) 
+    btnMenu = display.newImage("img/btn/btnMenuGo.png", true) 
 	btnMenu.x = 45
 	btnMenu.y = 30 + h
 	homeScreen:insert(btnMenu)
     btnMenu:addEventListener( "tap", showMenu )
     
+    menuGrp = display.newGroup()
+    homeScreen:insert(menuGrp)
+    
     title = display.newText( "", 230, 30 + h, "Chivo", 22)
     title:setFillColor( .8, .8, .8 )
-    homeScreen:insert(title)
+    menuGrp:insert(title)
 
-    fav = display.newImage("img/btn/btnMenuStar.png", true) 
-	fav.x = intW - 100
+    local fav = display.newImage("img/btn/btnMenuStar.png", true) 
+	fav.x = intW - 90
 	fav.y = 30 + h
-	homeScreen:insert(fav)
-    -- fav:addEventListener( "tap", loadFav )
+	menuGrp:insert(fav)
+    fav:addEventListener( "tap", showFav )
 
     local search = display.newImage("img/btn/btnMenuMapa.png", true) 
-	search.x = intW - 40
+	search.x = intW - 30
 	search.y = 30 + h
-	homeScreen:insert(search)
+	menuGrp:insert(search)
     search:addEventListener( "tap", showMap )
     
+    local filter = display.newImage("img/btn/btnMenuFilter.png", true) 
+	filter.x = intW + 30
+	filter.y = 30 + h
+	menuGrp:insert(filter)
+    filter:addEventListener( "tap", doFilter )
     
     -- Create submenu bar
     subMenuGrp = display.newGroup()
-    subMenuGrp.y = 70
     homeScreen:insert(subMenuGrp)
-    bottomBar = display.newRect( midW, intH - 35, intW, 70 )
-    bottomBar:setFillColor( titleGradient ) 
+    bottomBar = display.newRect( intW + 90, (65 + h), 160, intH - (65 + h) )
+    bottomBar.anchorY = 0
+    bottomBar:setFillColor( 0 ) 
 	subMenuGrp:insert(bottomBar)
     
     -- Create Restaurant Menu
@@ -830,7 +863,7 @@ function scene:createScene( event )
     
     clearTempDir()
     if networkConnection() then
-        loadBy(1)
+        loadBy(5)
     else
         loadingGrp.alpha = 0
         NoConnGrp.alpha = 1

@@ -12,7 +12,7 @@ local RestManager = {}
         -- Set url
 	    local url = settings.url
         url = url.."api/getCoupons/format/json"
-        url = url.."/email/"..settings.email
+        url = url.."/idApp/"..settings.idApp
     
         local function callback(event)
             if ( event.isError ) then
@@ -34,12 +34,12 @@ local RestManager = {}
         -- Set url
 	    local url = settings.url
         url = url.."api/getItems/format/json"
-        url = url.."/email/"..settings.email
+        url = url.."/idApp/"..settings.idApp
         url = url.."/type/"..type
         if not (subtype == nil) then
             url = url.."/subtype/"..subtype
         end
-        url = string.gsub(url, "%@", "%%40")
+        print(url)
         
         local function callback(event)
             if ( event.isError ) then
@@ -48,6 +48,9 @@ local RestManager = {}
                 local data = json.decode(event.response)
                 if data.success then
                     loadImages(data.items)
+                    if type==3 or type==4 then
+                        loadSubmenu(data.submenu, type)
+                    end
                 else
                     native.showAlert( "Go Deals", data.message, { "OK"})
                 end
@@ -63,8 +66,7 @@ local RestManager = {}
         -- Set url
 	    local url = settings.url
         url = url.."api/getServices/format/json"
-        url = url.."/email/"..settings.email
-        url = string.gsub(url, "%@", "%%40")
+        url = url.."/idApp/"..settings.idApp
     
         local function callback(event)
             if ( event.isError ) then
@@ -102,7 +104,7 @@ local RestManager = {}
             else
                 local data = json.decode(event.response)
                 if data.success then
-                    DBManager.updateUser(email, password, name, fbId)
+                    DBManager.updateUser(data.idApp, email, password, name, fbId)
                     gotoHome()
                 else
                     native.showAlert( "Go Deals", data.message, { "OK"})
@@ -130,7 +132,7 @@ local RestManager = {}
             else
                 local data = json.decode(event.response)
                 if data.success then
-                    DBManager.updateUser(email, password, '', '')
+                    DBManager.updateUser(data.idApp, email, password, '', '')
                     gotoHome()
                 else
                     native.showAlert( "Go Deals", data.message, { "OK"})
@@ -141,6 +143,43 @@ local RestManager = {}
         -- Do request
         network.request( url, "GET", callback ) 
     end
+
+    RestManager.setFav = function(id, typeId, status)
+        local settings = DBManager.getSettings()
+        -- Set url
+	    local url = settings.url
+        url = url.."api/setFav/format/json"
+        url = url.."/idApp/"..settings.idApp
+        url = url.."/couponId/"..id
+        url = url.."/typeId/"..typeId
+        url = url.."/status/"..status
+        print(url)
+        local function callback(event)
+            return true
+        end
+    
+        -- Do request
+        network.request( url, "GET", callback ) 
+    end
+
+    RestManager.getFav = function()
+        local settings = DBManager.getSettings()
+        -- Set url
+	    local url = settings.url
+        url = url.."api/getFav/format/json"
+        url = url.."/idApp/"..settings.idApp
+        
+        local function callback(event)
+            if ( event.isError ) then
+            else
+                local data = json.decode(event.response)
+                loadImages(data.items)
+            end
+            return true
+        end
+        -- Do request
+        network.request( url, "GET", callback )  
+	end
 
     
 

@@ -11,6 +11,8 @@ local widget = require( "widget" )
 local Globals = require('src.resources.Globals')
 local storyboard = require( "storyboard" )
 local DBManager = require('src.resources.DBManager')
+local Sprites = require('src.resources.Sprites')
+local RestManager = require('src.resources.RestManager')
 local scene = storyboard.newScene()
 
 -- Variables
@@ -20,6 +22,8 @@ local midW = display.contentCenterX
 local midH = display.contentCenterY
 local page = {}
 local scroll = {}
+local btnMap = {}
+local iconFav = {}
 local mapG
 local currentX = midW
 local currentI = 0
@@ -38,27 +42,32 @@ function gotoMain(event)
 end
 
 function tapPageMap(event)
+    local t = event.target
     if mapG == nil then
+        t:setFillColor( 0 )
+        local t = event.target
         mapG = display.newGroup()
         local bgShape = display.newRect( midW, intH + 138, intW, 286 )
         bgShape:setFillColor( 0 )
         mapG:insert( bgShape )
         local imgMin = display.newImage("img/btn/btnMinMap.png")
+        imgMin.index = t.index
         imgMin.x, imgMin.y = intW - 30, intH - 20
         imgMin:addEventListener( "tap", tapPageMap )
         mapG:insert( imgMin )
-
-       transition.to( mapG, {time=600, y = mapG.y - 280, transition=easing.outExpo, 
+        
+        transition.to( mapG, {time=600, y = mapG.y - 280, transition=easing.outExpo, 
             onComplete = function()
                 -- Crear mapa
                 local mapC = native.newMapView( midW, intH + 140, 480, 280 )
-                mapC:setCenter( 21.154425, -86.820303, 0.01, 0.01 )
+                mapC:setCenter( t.latitude, t.longitude, 0.01, 0.01 )
                 mapG:insert(mapC)
                 -- Agregar marcador
-                mapC:addMarker( 21.154425, -86.820303, { title = "Nombre Comercio", listener = markerListener} )
+                mapC:addMarker( t.latitude, t.longitude, { title = t.partnerName, listener = markerListener} )
             end
         })
     else
+        btnMap[t.index]:setFillColor( .2 )
         transition.to( mapG, {time=600, y = mapG.y + 300, transition=easing.outExpo, 
             onComplete = function()
                 -- Remove map
@@ -70,13 +79,24 @@ function tapPageMap(event)
 end
 
 function tapPageFav(event)
-    t = event.target
-    if t.isMark then
-        t.isMark = false
-        t:setFillColor( .2 )
-    else
+    local t = event.target
+    if not t.isMark then
+        -- Do candy eye
         t.isMark = true
         t:setFillColor( 0 )
+        iconFav[t.index]:setSequence("play")
+        iconFav[t.index]:play()
+        -- Set fav to cloud
+        Globals.Items[t.index].isFav = 1
+        RestManager.setFav(t.idCupon, t.idType, 1)
+    else
+        -- Do candy eye
+        t.isMark = false
+        t:setFillColor( .2 )
+        iconFav[t.index]:setSequence("stop")
+        -- Remove fav to cloud
+        Globals.Items[t.index].isFav = 0
+        RestManager.setFav(t.idCupon, t.idType, 0)
     end
 end
 
@@ -148,6 +168,8 @@ local function movePage(toRight)
         timer.performWithDelay( 350, function()
             -- Index
             currentI = currentI + 1
+            -- Change title
+            txtTitle.text = Globals.Items[currentI].title
             -- New page
             if currentI < #Globals.Items then
                 getPage(rightX, currentI + 1)
@@ -166,6 +188,8 @@ local function movePage(toRight)
         timer.performWithDelay( 350, function()
             -- Index
             currentI = currentI - 1
+            -- Change title
+            txtTitle.text = Globals.Items[currentI].title
             -- New page
             if currentI > 1 then
                 getPage(leftX, currentI - 1)
@@ -230,8 +254,9 @@ function getPage(setX, i)
             left = -midW,
             top = -midH + 32 + hC,
             width = intW+2,
-            height = intH - 65 + hC,
+            height = intH - 65 - hC,
             id = "onBottom",
+            friction = .8,
             horizontalScrollDisabled = false,
             verticalScrollDisabled = false,
             listener = scrollListener,
@@ -255,52 +280,82 @@ function buildSportTv(item, i)
     -- Settings
     local settings = DBManager.getSettings()
     
-    -- Title Detail
-    local titleShape = display.newRect( midW, 50, 440, 60 )
-    titleShape:setFillColor( 0 )
-    scroll[i]:insert( titleShape )
-    local titleInShape = display.newRect( midW, 50, 430, 50 )
-    titleInShape:setFillColor( .4, .81, 0 )
-    scroll[i]:insert( titleInShape )
-    local title = display.newText( item.title, midW, 50, "Chivo", 24)
-    title:setFillColor( 0 )
-    scroll[i]:insert( title )
-    
     -- Agregamos imagen
-    local mask = graphics.newMask( "img/bgk/maskEvent.png" )
-    local imgShape = display.newRect( midW, 205, 444, 214 )
+    local imgShape = display.newRect( midW, 157, 444, 278 )
     imgShape:setFillColor( .4 )
     scroll[i]:insert( imgShape )
+    local mask = graphics.newMask( "img/bgk/maskEvent.png" )
     local img = display.newImage(item.image, system.TemporaryDirectory)
-    img.x, img.y = midW, 265
+    img.x, img.y = midW, 185
     img.width, img.height  = 440, 330
     img:setMask( mask )
     scroll[i]:insert( img )
+    -- Boton de Mapa
+    btnMap[i] = display.newRect( midW - 110, 263, 218, 60 )
+    btnMap[i].index = i
+    btnMap[i]:setFillColor( .2 )
+    btnMap[i].partnerName = item.partnerName
+    btnMap[i].latitude = item.latitude
+    btnMap[i].longitude = item.longitude
+    btnMap[i]:addEventListener( "tap", tapPageMap )
+    scroll[i]:insert( btnMap[i] )
+    local mapIcon = display.newImage("img/btn/detailMap.png")
+    mapIcon.x, mapIcon.y = 50, 262
+    scroll[i]:insert( mapIcon )
+    local mapTxt = display.newText( "Mostrar Mapa", midW - 100, 262, "Chivo", 20)
+    mapTxt:setFillColor( 1 )
+    scroll[i]:insert( mapTxt )
+    -- Boton de Fav
+    local shapeR = display.newRect( midW + 110, 263, 218, 60 )
+    shapeR.index = i
+    shapeR.idCupon = item.idCupon
+    shapeR.idType = item.type
+    shapeR.isMark = false
+    shapeR:setFillColor( .2 )
+    shapeR:addEventListener( "tap", tapPageFav )
+    scroll[i]:insert( shapeR )
+    local sheet = graphics.newImageSheet(Sprites.fav.source, Sprites.fav.frames)
+    iconFav[i] = display.newSprite(sheet, Sprites.fav.sequences)
+    iconFav[i].x, iconFav[i].y = midW + 32, 262
+    scroll[i]:insert( iconFav[i] )
+    local favTxt = display.newText( "Agregar a Fav.", midW + 127, 262, "Chivo", 20)
+    favTxt:setFillColor( 1 )
+    scroll[i]:insert( favTxt )
     
+    -- Is fav
+    if not(item.isFav == 0 or item.isFav == '0') then 
+        shapeR.isMark = true
+        shapeR:setFillColor( 0 )
+        iconFav[i]:setSequence("isFav")
+    end
+    
+    -- Banner color
+    local detailShape = display.newRect( midW, 387, 480, 135 )
+    detailShape:setFillColor( {
+        type = 'gradient',
+        color1 = { 0, .5, 0, 1 }, 
+        color2 = { 0, .4, 0, 1 },
+        direction = "bottom"
+    } )
+    scroll[i]:insert( detailShape )
     -- Place Detail
-    local dImg1 = display.newImage("img/btn/detailCity.png")
-    dImg1.x, dImg1.y = 60, 350
+    local dImg1 = display.newImage("img/btn/detailPlace.png")
+    dImg1.x, dImg1.y = 60, 360
     scroll[i]:insert( dImg1 )
-    local dTxt1 = display.newText( item.subtitle1, 280, 355, 350, 24,  "Chivo", 20)
-    dTxt1:setFillColor( 0 )
+    local dTxt1 = display.newText( item.subtitle1, 280, 360, 350, 24,  "Chivo", 20)
+    dTxt1:setFillColor( 1 )
     scroll[i]:insert( dTxt1 )
-    
     -- Vigency Detail
     local dImg3 = display.newImage("img/btn/detailVigencia.png")
-    dImg3.x, dImg3.y = 60, 400
+    dImg3.x, dImg3.y = 60, 420
     scroll[i]:insert( dImg3 )
-    local dImg3 = display.newText( item.subtitle2, 280, 405, 340, 24,  "Chivo", 20)
-    dImg3:setFillColor( 0 )
+    local dImg3 = display.newText( item.subtitle2, 280, 420, 350, 24,  "Chivo", 20)
+    dImg3:setFillColor( 1 )
     scroll[i]:insert( dImg3 )
-    
-    local lastY = 420
-    if #item.bars > 0 then
         
-        -- Separador
-        lastY = 270
-        local sp1 = display.newRect( midW, 445, 340, 2 )
-        sp1:setFillColor( .8 )
-        scroll[i]:insert( sp1 )
+    
+    local lastY = 280
+    if #item.bars > 0 then
         
         for z = 1, #item.bars, 1 do 
             lastY =  lastY + 370
@@ -342,63 +397,95 @@ function buildSportTv(item, i)
         end
     end
     
+    lastY =  lastY + 200
+    -- Publicidad
+    local publiShape = display.newRect( midW, lastY + 65, 480, 130 )
+    publiShape:setFillColor( 0.8, 0.8, 0.8 )
+    scroll[i]:insert( publiShape )
+    local publicidad = display.newImage("img/btn/publicidad.png")
+    publicidad.x, publicidad.y = midW, lastY + 55
+    scroll[i]:insert( publicidad )
     
 end
 
 function buildAdondeir(item, i)
     
-    -- Title Detail
-    local titleShape = display.newRect( midW, 50, 440, 60 )
-    titleShape:setFillColor( 0 )
-    scroll[i]:insert( titleShape )
-    local titleInShape = display.newRect( midW, 50, 430, 50 )
-    titleInShape:setFillColor( .4, .81, 0 )
-    scroll[i]:insert( titleInShape )
-    local title = display.newText( item.title, midW, 50, "Chivo", 24)
-    title:setFillColor( 0 )
-    scroll[i]:insert( title )
-    
     -- Agregamos imagen
-    local imgShape = display.newRect( midW, 260, 444, 334 )
+    local imgShape = display.newRect( midW, 157, 444, 278 )
     imgShape:setFillColor( .4 )
     scroll[i]:insert( imgShape )
+    local mask = graphics.newMask( "img/bgk/maskEvent.png" )
     local img = display.newImage(item.image, system.TemporaryDirectory)
-    img.x, img.y = midW, 260
+    img.x, img.y = midW, 185
     img.width, img.height  = 440, 330
+    img:setMask( mask )
     scroll[i]:insert( img )
+    -- Boton de Mapa
+    btnMap[i] = display.newRect( midW - 110, 263, 218, 60 )
+    btnMap[i].index = i
+    btnMap[i]:setFillColor( .2 )
+    btnMap[i].partnerName = item.partnerName
+    btnMap[i].latitude = item.latitude
+    btnMap[i].longitude = item.longitude
+    btnMap[i]:addEventListener( "tap", tapPageMap )
+    scroll[i]:insert( btnMap[i] )
+    local mapIcon = display.newImage("img/btn/detailMap.png")
+    mapIcon.x, mapIcon.y = 50, 262
+    scroll[i]:insert( mapIcon )
+    local mapTxt = display.newText( "Mostrar Mapa", midW - 100, 262, "Chivo", 20)
+    mapTxt:setFillColor( 1 )
+    scroll[i]:insert( mapTxt )
+    -- Boton de Fav
+    local shapeR = display.newRect( midW + 110, 263, 218, 60 )
+    shapeR.index = i
+    shapeR.idCupon = item.idCupon
+    shapeR.idType = item.type
+    shapeR.isMark = false
+    shapeR:setFillColor( .2 )
+    shapeR:addEventListener( "tap", tapPageFav )
+    scroll[i]:insert( shapeR )
+    local sheet = graphics.newImageSheet(Sprites.fav.source, Sprites.fav.frames)
+    iconFav[i] = display.newSprite(sheet, Sprites.fav.sequences)
+    iconFav[i].x, iconFav[i].y = midW + 32, 262
+    scroll[i]:insert( iconFav[i] )
+    local favTxt = display.newText( "Agregar a Fav.", midW + 127, 262, "Chivo", 20)
+    favTxt:setFillColor( 1 )
+    scroll[i]:insert( favTxt )
     
-    -- Add button
-    local addShape = display.newRect( midW, 470, 440, 60 )
-    addShape:setFillColor( 0 )
-    scroll[i]:insert( addShape )
-    local addInShape = display.newRect( midW, 470, 430, 50 )
-    addInShape:setFillColor( 1 )
-    scroll[i]:insert( addInShape )
-    local addIcon = display.newImage("img/btn/favOut.png")
-    addIcon.x, addIcon.y = 60, 470
-    scroll[i]:insert( addIcon )
-    local addTxt = display.newText( "Agregar a favoritos", midW, 470, "Chivo", 24)
-    addTxt:setFillColor( 0 )
-    scroll[i]:insert( addTxt )
+    -- Is fav
+    if not(item.isFav == 0 or item.isFav == '0') then 
+        shapeR.isMark = true
+        shapeR:setFillColor( 0 )
+        iconFav[i]:setSequence("isFav")
+    end
     
-    -- Separador
-    local sp1 = display.newRect( midW, 520, 340, 2 )
-    sp1:setFillColor( .8 )
-    scroll[i]:insert( sp1 )
+    local lastY = 340
     
-    -- Detalle
-    local infoTitle = display.newText( item.subtitle1, midW, 550, "Chivo", 24)
-    infoTitle:setFillColor( 0 )
-    scroll[i]:insert( infoTitle )
-    local infoTxt = display.newText( item.txtMax, 240, 690, 430, 0,  "Chivo", 20)
-    infoTxt:setFillColor( 0 )
-    scroll[i]:insert( infoTxt )
-    local lastY = 520 + (infoTxt.contentHeight / 2) + 50
-    infoTxt.y = lastY
+    -- Terminos y condiciones
+    local termShape = display.newRect( midW, lastY, 480, 135 )
+    termShape:setFillColor( {
+        type = 'gradient',
+        color1 = { 0, .5, 0, 1 }, 
+        color2 = { 0, .4, 0, 1 },
+        direction = "bottom"
+    } )
+    scroll[i]:insert( termShape )
+    local termTitle = display.newText( item.subtitle1, midW, lastY, "Chivo", 24)
+    termTitle:setFillColor( 1 )
+    scroll[i]:insert( termTitle )
+    local termTxt = display.newText( item.txtMax, 240, lastY, 430, 0,  "Chivo", 16)
+    termTxt:setFillColor( 1 )
+    scroll[i]:insert( termTxt )
+    -- Move Text
+    lastY = lastY + (termTxt.contentHeight / 2) + 25
+    termTxt.y = lastY
+    -- Move Shape
+    termShape.height = termTxt.contentHeight + 70
+    termShape.y = lastY - 15
+    lastY = lastY + (termTxt.contentHeight / 2) + 15
     
-    lastY = lastY + (infoTxt.contentHeight / 2) + 15
     
-    boolBg = false
+    boolBg = true
     if #item.hotels > 0 then
         boolBg = not boolBg
         lastY = addItemsPlace(item.hotels, "¿Dónde hospedarse?", 1, i, lastY, boolBg)
@@ -412,24 +499,13 @@ function buildAdondeir(item, i)
         lastY = addItemsPlace(item.bars, "¿Dónde divertirse?", 3, i, lastY, boolBg)
     end
     
-    -- Show Map
-    local mapShape = display.newRect( midW, lastY + 55, 440, 60 )
-    mapShape:setFillColor( 0 )
-    scroll[i]:insert( mapShape )
-    local mapInShape = display.newRect( midW, lastY + 55, 430, 50 )
-    mapInShape:setFillColor( 1 )
-    scroll[i]:insert( mapInShape )
-    local mapIcon = display.newImage("img/btn/detailMapOut.png")
-    mapIcon.x, mapIcon.y = 60, lastY + 55
-    scroll[i]:insert( mapIcon )
-    local mapTxt = display.newText( "Mostrar Ubicación", midW, lastY + 55, "Chivo", 24)
-    mapTxt:setFillColor( 0 )
-    scroll[i]:insert( mapTxt )
-    
-    -- Ended
-    local sp3 = display.newRect( 0, lastY + 130, 0, 1 )
-    sp3:setFillColor( 1 )
-    scroll[i]:insert( sp3 )
+    -- Publicidad
+    local publiShape = display.newRect( midW, lastY + 65, 480, 130 )
+    publiShape:setFillColor( 0.8, 0.8, 0.8 )
+    scroll[i]:insert( publiShape )
+    local publicidad = display.newImage("img/btn/publicidad.png")
+    publicidad.x, publicidad.y = midW, lastY + 55
+    scroll[i]:insert( publicidad )
     
 end
 
@@ -439,31 +515,43 @@ function addItemsPlace(items, textTitle, typeC, i, lastY, boolBg)
      -- Hoteles
     lastY = lastY + 30
     local secTitle1 = display.newText( textTitle, midW, lastY, "Chivo", 24)
-    secTitle1:setFillColor( 0 )
+    if boolBg then
+        secTitle1:setFillColor( 1 )
+    else
+        secTitle1:setFillColor( 0 )
+    end
     scroll[i]:insert( secTitle1 )
 
     lastY = lastY + 80
     for z = 1, #items, 1 do 
+        
+         -- Agregamos rectangulo alfa al pie
+        local shapeAlpha = display.newRoundedRect( midW, lastY, 460, 100, 10 )
+        shapeAlpha:setFillColor( 0, .7 )
+        scroll[i]:insert( shapeAlpha )
         
         local itemIcon = display.newImage("img/btn/iconPlace".. typeC ..".png")
         itemIcon.x, itemIcon.y = 60, lastY - 10
         scroll[i]:insert( itemIcon )
         
         local itemName = display.newText( items[z].nombre, 280, lastY - 30, 350, 24, "Chivo", 20)
-        itemName:setFillColor( 0 )
+        itemName:setFillColor( 1 )
         scroll[i]:insert( itemName )
 
         local itemAddress = display.newText( items[z].address, 280, lastY - 5, 350, 22, "Chivo", 16)
-        itemAddress:setFillColor( 0 )
+        itemAddress:setFillColor( 1 )
         scroll[i]:insert( itemAddress )
 
         local itemPhone = display.newText( items[z].phone, 280, lastY + 15, 350, 22, "Chivo", 16)
-        itemPhone:setFillColor( 0 )
+        itemPhone:setFillColor( 1 )
         scroll[i]:insert( itemPhone )
 
         local itemInfo = display.newText( items[z].info, 240, lastY + 35, 430, 0, "Chivo", 16)
-        itemInfo:setFillColor( 0 )
+        itemInfo:setFillColor( 1 )
         scroll[i]:insert( itemInfo )
+        
+        shapeAlpha.height = shapeAlpha.height + itemInfo.contentHeight - 10
+        shapeAlpha.y = lastY + (itemInfo.contentHeight / 2) - 5
 
         lastY = lastY + (itemInfo.contentHeight / 2) + 30
         itemInfo.y = lastY
@@ -476,118 +564,31 @@ function addItemsPlace(items, textTitle, typeC, i, lastY, boolBg)
     end
     
      -- Background
+    local middle = (lastY - intY) / 2
+    local sp2 = display.newRect( midW, intY + middle, intW, middle * 2 )
     if boolBg then
-        local middle = (lastY - intY) / 2
-        local sp2 = display.newRect( midW, intY + middle, intW, middle * 2 )
-        sp2:setFillColor( .9 )
-        scroll[i]:insert( sp2 )
-        sp2:toBack()
+        sp2:setFillColor( {
+            type = 'gradient',
+            color1 = { 0, .5, 0, 1 }, 
+            color2 = { 0, .4, 0, 1 },
+            direction = "bottom"
+        } )
+    else
+        sp2:setFillColor( {
+            type = 'gradient',
+            color1 = { 1, 1 }, 
+            color2 = { .9, 1 },
+            direction = "bottom"
+        } )
     end
+    scroll[i]:insert( sp2 )
+    sp2:toBack()
     
     return lastY
     
 end
 
 function buildEvent(item, i)
-    
-    -- Title Detail
-    local titleShape = display.newRect( midW, 50, 440, 60 )
-    titleShape:setFillColor( 0 )
-    scroll[i]:insert( titleShape )
-    local titleInShape = display.newRect( midW, 50, 430, 50 )
-    titleInShape:setFillColor( .4, .81, 0 )
-    scroll[i]:insert( titleInShape )
-    local title = display.newText( item.title, midW, 50, "Chivo", 24)
-    title:setFillColor( 0 )
-    scroll[i]:insert( title )
-    
-    -- Agregamos imagen
-    local mask = graphics.newMask( "img/bgk/maskEvent.png" )
-    local imgShape = display.newRect( midW, 205, 444, 214 )
-    imgShape:setFillColor( .4 )
-    scroll[i]:insert( imgShape )
-    local img = display.newImage(item.image, system.TemporaryDirectory)
-    img.x, img.y = midW, 265
-    img.width, img.height  = 440, 330
-    img:setMask( mask )
-    scroll[i]:insert( img )
-    
-    -- Place Detail
-    local dImg1 = display.newImage("img/btn/detailCity.png")
-    dImg1.x, dImg1.y = 60, 350
-    scroll[i]:insert( dImg1 )
-    local dTxt1 = display.newText( item.subtitle1, 280, 340, 350, 24,  "Chivo", 20)
-    dTxt1:setFillColor( 0 )
-    scroll[i]:insert( dTxt1 )
-    local dTxtSub1 = display.newText( item.subtitle2, 280, 365, 350, 24,  "Chivo", 16)
-    dTxtSub1:setFillColor( 0 )
-    scroll[i]:insert( dTxtSub1 )
-    
-    -- Vigency Detail
-    local dImg3 = display.newImage("img/btn/detailVigencia.png")
-    dImg3.x, dImg3.y = 60, 400
-    scroll[i]:insert( dImg3 )
-    local dImg3 = display.newText( item.dateMax, 280, 405, 340, 24,  "Chivo", 20)
-    dImg3:setFillColor( 0 )
-    scroll[i]:insert( dImg3 )
-    
-    -- Add button
-    local addShape = display.newRect( midW, 470, 440, 60 )
-    addShape:setFillColor( 0 )
-    scroll[i]:insert( addShape )
-    local addInShape = display.newRect( midW, 470, 430, 50 )
-    addInShape:setFillColor( 1 )
-    scroll[i]:insert( addInShape )
-    local addIcon = display.newImage("img/btn/favOut.png")
-    addIcon.x, addIcon.y = 60, 470
-    scroll[i]:insert( addIcon )
-    local addTxt = display.newText( "Agregar a favoritos", midW, 470, "Chivo", 24)
-    addTxt:setFillColor( 0 )
-    scroll[i]:insert( addTxt )
-    
-    -- Separador
-    local sp1 = display.newRect( midW, 520, 340, 2 )
-    sp1:setFillColor( .8 )
-    scroll[i]:insert( sp1 )
-    
-    -- Detalle
-    local infoTxt = display.newText( item.info, 240, 690, 430, 0,  "Chivo", 20)
-    infoTxt:setFillColor( 0 )
-    scroll[i]:insert( infoTxt )
-    local lastY = 520 + (infoTxt.contentHeight / 2) + 20
-    infoTxt.y = lastY
-    
-    -- Separador
-    lastY = lastY + (infoTxt.contentHeight / 2) + 15
-    local sp2 = display.newRect( midW, lastY, 340, 2 )
-    sp2:setFillColor( .8 )
-    scroll[i]:insert( sp2 )
-    
-    -- Show Map
-    local mapShape = display.newRect( midW, lastY + 55, 440, 60 )
-    mapShape:setFillColor( 0 )
-    scroll[i]:insert( mapShape )
-    local mapInShape = display.newRect( midW, lastY + 55, 430, 50 )
-    mapInShape:setFillColor( 1 )
-    scroll[i]:insert( mapInShape )
-    local mapIcon = display.newImage("img/btn/detailMapOut.png")
-    mapIcon.x, mapIcon.y = 60, lastY + 55
-    scroll[i]:insert( mapIcon )
-    local mapTxt = display.newText( "Mostrar Ubicación", midW, lastY + 55, "Chivo", 24)
-    mapTxt:setFillColor( 0 )
-    scroll[i]:insert( mapTxt )
-    
-    -- Ended
-    local sp3 = display.newRect( 0, lastY + 130, 0, 1 )
-    sp3:setFillColor( 1 )
-    scroll[i]:insert( sp3 )
-    
-end
-
-function buildCoupon(item, i)
-    
-    -- Title Detail
-    txtTitle.text = item.title
     
     -- Agregamos imagen
     local imgShape = display.newRect( midW, 217, 444, 398 )
@@ -598,10 +599,14 @@ function buildCoupon(item, i)
     img.width, img.height  = 440, 330
     scroll[i]:insert( img )
     -- Boton de Mapa
-    local shapeL = display.newRect( midW - 110, 383, 218, 60 )
-    shapeL:setFillColor( .2 )
-    shapeL:addEventListener( "tap", tapPageMap )
-    scroll[i]:insert( shapeL )
+    btnMap[i] = display.newRect( midW - 110, 383, 218, 60 )
+    btnMap[i].index = i
+    btnMap[i]:setFillColor( .2 )
+    btnMap[i].partnerName = item.partnerName
+    btnMap[i].latitude = item.latitude
+    btnMap[i].longitude = item.longitude
+    btnMap[i]:addEventListener( "tap", tapPageMap )
+    scroll[i]:insert( btnMap[i] )
     local mapIcon = display.newImage("img/btn/detailMap.png")
     mapIcon.x, mapIcon.y = 50, 382
     scroll[i]:insert( mapIcon )
@@ -610,23 +615,133 @@ function buildCoupon(item, i)
     scroll[i]:insert( mapTxt )
     -- Boton de Fav
     local shapeR = display.newRect( midW + 110, 383, 218, 60 )
+    shapeR.index = i
+    shapeR.idCupon = item.idCupon
+    shapeR.idType = item.type
     shapeR.isMark = false
     shapeR:setFillColor( .2 )
     shapeR:addEventListener( "tap", tapPageFav )
     scroll[i]:insert( shapeR )
-    local favIcon = display.newImage("img/btn/detailFav.png")
-    favIcon.x, favIcon.y = midW + 32, 382
-    scroll[i]:insert( favIcon )
+    local sheet = graphics.newImageSheet(Sprites.fav.source, Sprites.fav.frames)
+    iconFav[i] = display.newSprite(sheet, Sprites.fav.sequences)
+    iconFav[i].x, iconFav[i].y = midW + 32, 382
+    scroll[i]:insert( iconFav[i] )
     local favTxt = display.newText( "Agregar a Fav.", midW + 127, 382, "Chivo", 20)
     favTxt:setFillColor( 1 )
     scroll[i]:insert( favTxt )
+    
+    -- Is fav
+    if not(item.isFav == 0 or item.isFav == '0') then 
+        shapeR.isMark = true
+        shapeR:setFillColor( 0 )
+        iconFav[i]:setSequence("isFav")
+    end
     
     -- Banner color
     local detailShape = display.newRect( midW, 507, 480, 135 )
     detailShape:setFillColor( {
         type = 'gradient',
-        color1 = { 0, .4, 0, .7 }, 
-        color2 = { 0, .3, 0, 1 },
+        color1 = { 0, .5, 0, 1 }, 
+        color2 = { 0, .4, 0, 1 },
+        direction = "bottom"
+    } )
+    scroll[i]:insert( detailShape )
+    -- Place Detail
+    local dImg1 = display.newImage("img/btn/detailPlace.png")
+    dImg1.x, dImg1.y = 60, 480
+    scroll[i]:insert( dImg1 )
+    local dTxt1 = display.newText( item.subtitle1, 280, 475, 350, 24,  "Chivo", 20)
+    dTxt1:setFillColor( 1 )
+    scroll[i]:insert( dTxt1 )
+    local dTxtSub1 = display.newText( item.subtitle2, 280, 500, 350, 24,  "Chivo", 16)
+    dTxtSub1:setFillColor( 1 )
+    scroll[i]:insert( dTxtSub1 )
+    
+    -- Vigency Detail
+    local dImg3 = display.newImage("img/btn/detailVigencia.png")
+    dImg3.x, dImg3.y = 60, 540
+    scroll[i]:insert( dImg3 )
+    local dImg3 = display.newText( item.dateMax, 280, 540, 350, 24,  "Chivo", 20)
+    dImg3:setFillColor( 1 )
+    scroll[i]:insert( dImg3 )
+        
+    -- Descripcion
+    local descTitle = display.newText( "Detalle del evento:", midW, 610, "Chivo", 24)
+    descTitle:setFillColor( 0 )
+    scroll[i]:insert( descTitle )
+    local descTxt = display.newText( item.info, 240, 690, 430, 0,  "Chivo", 16)
+    descTxt:setFillColor( 0 )
+    scroll[i]:insert( descTxt )
+    local lastY = 580 + (descTxt.contentHeight / 2) + 50
+    descTxt.y = lastY
+    lastY = lastY + (descTxt.contentHeight / 2) + 50
+    
+    -- Publicidad
+    local publiShape = display.newRect( midW, lastY + 65, 480, 130 )
+    publiShape:setFillColor( 0.8, 0.8, 0.8 )
+    scroll[i]:insert( publiShape )
+    local publicidad = display.newImage("img/btn/publicidad.png")
+    publicidad.x, publicidad.y = midW, lastY + 55
+    scroll[i]:insert( publicidad )
+    
+    
+end
+
+function buildCoupon(item, i)
+    
+    -- Agregamos imagen
+    local imgShape = display.newRect( midW, 217, 444, 398 )
+    imgShape:setFillColor( .4 )
+    scroll[i]:insert( imgShape )
+    local img = display.newImage(item.image, system.TemporaryDirectory)
+    img.x, img.y = midW, 185
+    img.width, img.height  = 440, 330
+    scroll[i]:insert( img )
+    -- Boton de Mapa
+    btnMap[i] = display.newRect( midW - 110, 383, 218, 60 )
+    btnMap[i].index = i
+    btnMap[i]:setFillColor( .2 )
+    btnMap[i].partnerName = item.partnerName
+    btnMap[i].latitude = item.latitude
+    btnMap[i].longitude = item.longitude
+    btnMap[i]:addEventListener( "tap", tapPageMap )
+    scroll[i]:insert( btnMap[i] )
+    local mapIcon = display.newImage("img/btn/detailMap.png")
+    mapIcon.x, mapIcon.y = 50, 382
+    scroll[i]:insert( mapIcon )
+    local mapTxt = display.newText( "Mostrar Mapa", midW - 100, 382, "Chivo", 20)
+    mapTxt:setFillColor( 1 )
+    scroll[i]:insert( mapTxt )
+    -- Boton de Fav
+    local shapeR = display.newRect( midW + 110, 383, 218, 60 )
+    shapeR.index = i
+    shapeR.idCupon = item.idCupon
+    shapeR.idType = item.type
+    shapeR.isMark = false
+    shapeR:setFillColor( .2 )
+    shapeR:addEventListener( "tap", tapPageFav )
+    scroll[i]:insert( shapeR )
+    local sheet = graphics.newImageSheet(Sprites.fav.source, Sprites.fav.frames)
+    iconFav[i] = display.newSprite(sheet, Sprites.fav.sequences)
+    iconFav[i].x, iconFav[i].y = midW + 32, 382
+    scroll[i]:insert( iconFav[i] )
+    local favTxt = display.newText( "Agregar a Fav.", midW + 127, 382, "Chivo", 20)
+    favTxt:setFillColor( 1 )
+    scroll[i]:insert( favTxt )
+    
+    -- Is fav
+    if not(item.isFav == 0 or item.isFav == '0') then 
+        shapeR.isMark = true
+        shapeR:setFillColor( 0 )
+        iconFav[i]:setSequence("isFav")
+    end
+    
+    -- Banner color
+    local detailShape = display.newRect( midW, 507, 480, 135 )
+    detailShape:setFillColor( {
+        type = 'gradient',
+        color1 = { 0, .5, 0, 1 }, 
+        color2 = { 0, .4, 0, 1 },
         direction = "bottom"
     } )
     scroll[i]:insert( detailShape )
@@ -649,7 +764,7 @@ function buildCoupon(item, i)
     local descTitle = display.newText( "Detalle de la promoción:", midW, 610, "Chivo", 24)
     descTitle:setFillColor( 0 )
     scroll[i]:insert( descTitle )
-    local descTxt = display.newText( item.clauses, 240, 690, 430, 0,  "Chivo", 16)
+    local descTxt = display.newText( item.detail, 240, 690, 430, 0,  "Chivo", 16)
     descTxt:setFillColor( 0 )
     scroll[i]:insert( descTxt )
     local lastY = 580 + (descTxt.contentHeight / 2) + 50
@@ -660,8 +775,8 @@ function buildCoupon(item, i)
     local termShape = display.newRect( midW, lastY, 480, 135 )
     termShape:setFillColor( {
         type = 'gradient',
-        color1 = { 0, .4, 0, .7 }, 
-        color2 = { 0, .3, 0, 1 },
+        color1 = { 0, .5, 0, 1 }, 
+        color2 = { 0, .4, 0, 1 },
         direction = "bottom"
     } )
     scroll[i]:insert( termShape )
@@ -714,12 +829,12 @@ function scene:createScene( event )
     screen:insert(titleBar)
     
     local lineBar = display.newRect( display.contentCenterX, 63 + hC, display.contentWidth, 5 )
-    lineBar:setFillColor( {
-            type = 'gradient',
-            color1 = { 0, .7, 0, 1 }, 
-            color2 = { 0, .7, 0, .5 },
-            direction = "bottom"
-        } ) 
+    lineBar:setFillColor({
+        type = 'gradient',
+        color1 = { 0, 1, 0, 1 }, 
+        color2 = { 0, .5, 0, .5 },
+        direction = "bottom"
+    }) 
     screen:insert(lineBar)
 
     local btnReturn = display.newImage("img/btn/left.png", true) 
@@ -739,6 +854,8 @@ end
 
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
+    -- Title Detail
+    txtTitle.text = Globals.Items[currentI].title
     getPage(currentX, currentI) -- Current
     -- Left - Right
     leftX = currentX - intW
