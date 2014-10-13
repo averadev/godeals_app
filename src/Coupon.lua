@@ -290,23 +290,8 @@ function buildSportTv(item, i)
     img.width, img.height  = 440, 330
     img:setMask( mask )
     scroll[i]:insert( img )
-    -- Boton de Mapa
-    btnMap[i] = display.newRect( midW - 110, 263, 218, 60 )
-    btnMap[i].index = i
-    btnMap[i]:setFillColor( .2 )
-    btnMap[i].partnerName = item.partnerName
-    btnMap[i].latitude = item.latitude
-    btnMap[i].longitude = item.longitude
-    btnMap[i]:addEventListener( "tap", tapPageMap )
-    scroll[i]:insert( btnMap[i] )
-    local mapIcon = display.newImage("img/btn/detailMap.png")
-    mapIcon.x, mapIcon.y = 50, 262
-    scroll[i]:insert( mapIcon )
-    local mapTxt = display.newText( "Mostrar Mapa", midW - 100, 262, "Chivo", 20)
-    mapTxt:setFillColor( 1 )
-    scroll[i]:insert( mapTxt )
     -- Boton de Fav
-    local shapeR = display.newRect( midW + 110, 263, 218, 60 )
+    local shapeR = display.newRect( midW, 263, 440, 60 )
     shapeR.index = i
     shapeR.idCupon = item.idCupon
     shapeR.idType = item.type
@@ -316,9 +301,9 @@ function buildSportTv(item, i)
     scroll[i]:insert( shapeR )
     local sheet = graphics.newImageSheet(Sprites.fav.source, Sprites.fav.frames)
     iconFav[i] = display.newSprite(sheet, Sprites.fav.sequences)
-    iconFav[i].x, iconFav[i].y = midW + 32, 262
+    iconFav[i].x, iconFav[i].y = midW - 100, 262
     scroll[i]:insert( iconFav[i] )
-    local favTxt = display.newText( "Agregar a Fav.", midW + 127, 262, "Chivo", 20)
+    local favTxt = display.newText( "Agregar a Favoritos", midW + 20, 262, "Chivo", 20)
     favTxt:setFillColor( 1 )
     scroll[i]:insert( favTxt )
     
@@ -364,7 +349,6 @@ function buildSportTv(item, i)
             imgShape:setFillColor( .4 )
             scroll[i]:insert( imgShape )
             
-            
             local path = system.pathForFile( item.bars[z].image, system.TemporaryDirectory )
             local fhd = io.open( path )
             -- Determine if file exists
@@ -402,10 +386,25 @@ function buildSportTv(item, i)
     local publiShape = display.newRect( midW, lastY + 65, 480, 130 )
     publiShape:setFillColor( 0.8, 0.8, 0.8 )
     scroll[i]:insert( publiShape )
-    local publicidad = display.newImage("img/btn/publicidad.png")
-    publicidad.x, publicidad.y = midW, lastY + 55
-    scroll[i]:insert( publicidad )
-    
+    -- Determine if publicity exists
+    local pathP = system.pathForFile( item.publicidad, system.TemporaryDirectory )
+    local fhdP = io.open( pathP )
+    if fhdP then
+        fhdP:close()
+        local publicidad = display.newImage(item.publicidad, system.TemporaryDirectory )
+        publicidad.x, publicidad.y = midW, lastY + 55
+        scroll[i]:insert( publicidad )
+    else
+        -- Get from cloud
+        display.loadRemoteImage( settings.url .. 'assets/img/app/publicity/movil/' .. item.publicidad, "GET", 
+            function ( event )
+                if ( event.isError ) then
+                else
+                    event.target.x, event.target.y = midW, lastY + 55
+                    scroll[i]:insert( event.target )
+                end
+        end, item.publicidad, system.TemporaryDirectory )
+    end
 end
 
 function buildAdondeir(item, i)
@@ -503,10 +502,25 @@ function buildAdondeir(item, i)
     local publiShape = display.newRect( midW, lastY + 65, 480, 130 )
     publiShape:setFillColor( 0.8, 0.8, 0.8 )
     scroll[i]:insert( publiShape )
-    local publicidad = display.newImage("img/btn/publicidad.png")
-    publicidad.x, publicidad.y = midW, lastY + 55
-    scroll[i]:insert( publicidad )
-    
+    -- Determine if publicity exists
+    local pathP = system.pathForFile( item.publicidad, system.TemporaryDirectory )
+    local fhdP = io.open( pathP )
+    if fhdP then
+        fhdP:close()
+        local publicidad = display.newImage(item.publicidad, system.TemporaryDirectory )
+        publicidad.x, publicidad.y = midW, lastY + 55
+        scroll[i]:insert( publicidad )
+    else
+        -- Get from cloud
+        display.loadRemoteImage( settings.url .. 'assets/img/app/publicity/movil/' .. item.publicidad, "GET", 
+            function ( event )
+                if ( event.isError ) then
+                else
+                    event.target.x, event.target.y = midW, lastY + 55
+                    scroll[i]:insert( event.target )
+                end
+        end, item.publicidad, system.TemporaryDirectory )
+    end
 end
 
 function addItemsPlace(items, textTitle, typeC, i, lastY, boolBg)
@@ -680,11 +694,25 @@ function buildEvent(item, i)
     local publiShape = display.newRect( midW, lastY + 65, 480, 130 )
     publiShape:setFillColor( 0.8, 0.8, 0.8 )
     scroll[i]:insert( publiShape )
-    local publicidad = display.newImage("img/btn/publicidad.png")
-    publicidad.x, publicidad.y = midW, lastY + 55
-    scroll[i]:insert( publicidad )
-    
-    
+    -- Determine if publicity exists
+    local pathP = system.pathForFile( item.publicidad, system.TemporaryDirectory )
+    local fhdP = io.open( pathP )
+    if fhdP then
+        fhdP:close()
+        local publicidad = display.newImage(item.publicidad, system.TemporaryDirectory )
+        publicidad.x, publicidad.y = midW, lastY + 55
+        scroll[i]:insert( publicidad )
+    else
+        -- Get from cloud
+        display.loadRemoteImage( settings.url .. 'assets/img/app/publicity/movil/' .. item.publicidad, "GET", 
+            function ( event )
+                if ( event.isError ) then
+                else
+                    event.target.x, event.target.y = midW, lastY + 55
+                    scroll[i]:insert( event.target )
+                end
+        end, item.publicidad, system.TemporaryDirectory )
+    end
 end
 
 function buildCoupon(item, i)
@@ -798,10 +826,25 @@ function buildCoupon(item, i)
     local publiShape = display.newRect( midW, lastY + 65, 480, 130 )
     publiShape:setFillColor( 0.8, 0.8, 0.8 )
     scroll[i]:insert( publiShape )
-    local publicidad = display.newImage("img/btn/publicidad.png")
-    publicidad.x, publicidad.y = midW, lastY + 55
-    scroll[i]:insert( publicidad )
-    
+    -- Determine if publicity exists
+    local pathP = system.pathForFile( item.publicidad, system.TemporaryDirectory )
+    local fhdP = io.open( pathP )
+    if fhdP then
+        fhdP:close()
+        local publicidad = display.newImage(item.publicidad, system.TemporaryDirectory )
+        publicidad.x, publicidad.y = midW, lastY + 55
+        scroll[i]:insert( publicidad )
+    else
+        -- Get from cloud
+        display.loadRemoteImage( settings.url .. 'assets/img/app/publicity/movil/' .. item.publicidad, "GET", 
+            function ( event )
+                if ( event.isError ) then
+                else
+                    event.target.x, event.target.y = midW, lastY + 55
+                    scroll[i]:insert( event.target )
+                end
+        end, item.publicidad, system.TemporaryDirectory )
+    end
 end
 
 ---------------------------------------------------------------------------------

@@ -21,8 +21,8 @@ local menuScreen = Menu:new()
 local homeScreen = display.newGroup()
 
 -- Objects
-local scrollView, menuGrp, subMenuGrp, restMenuGrp, settings, mask 
-local btnMenu, loading, title, loadingGrp, NoConnGrp
+local scrollView, menuGrp, subMenuGrp, settings, mask 
+local btnMenu, loading, title, loadingGrp, NoConnGrp, bgFloatMenu
 local svHeightY = {}
 local coupons = {}
 local imageItems = {}
@@ -30,6 +30,7 @@ local submenu = {}
 local submenuTxt = {}
 local submenuline = {}
 local submenuRest = {}
+local bgSubMenu = {}
 local noPackage = 1
 local fxTap = audio.loadSound( "fx/click.wav")
 
@@ -49,7 +50,7 @@ local isBreak = false
 -- LISTENERS
 ---------------------------------------------------------------------------------
 function showMenu(event)
-    if isHome then
+    if isHome and subMenuGrp.alpha == 0 then
         isHome = false
         transition.to( homeScreen, { x = homeScreen.x + 400, time = 400, transition = easing.outExpo } )
         transition.to( menuScreen, { x = menuScreen.x + 400, time = 400, transition = easing.outExpo } )
@@ -68,10 +69,11 @@ function hideMenu(event)
             isBreak = false
         end, 1 )
     end
+    hideMenuFilter()
 end
 
 function showCoupon(event)
-    if isHome then
+    if isHome and subMenuGrp.alpha == 0 then
         storyboard.gotoScene( "src.Coupon", {
             time = 400,
             effect = "crossFade",
@@ -90,9 +92,8 @@ end
 
 function showFav(event)
     if isHome then
-        hideRestMenus()
         cleanHome()
-        hideSubmenu()
+        --hideSubmenu()
         noCallback = noCallback + 1
         RestManager.getFav()
         title.text = "Favoritos"
@@ -105,98 +106,51 @@ function showMap(event)
     end
 end
 
-function doFilter(event)
-    
-end
-
-function getSubMenu(event)
-    local t = event.target
-    if #submenu > #submenuline then
-        submenuline[#submenuline + 1] = display.newRect( midW, midH, 80, 70 )
-        submenuline[#submenuline].alpha = .2
-        subMenuGrp:insert(submenuline[#submenuline])
+function showMenuFilter(event)
+    if subMenuGrp.alpha == 0 then
+        if #coupons > 0 then if coupons[2].method == 'search' then coupons[2].x = -300 end end
+        transition.to( mask, { alpha = .5, time = 400, transition = easing.outQuad } )
+        transition.to( subMenuGrp, { alpha = 1, time = 400, transition = easing.outQuad } )
+    else
+        hideMenuFilter()
     end
-    submenuline[#submenuline].x = t.x
-    submenuline[#submenuline].y = t.y
-    
-    -- Load option
-    cleanHome()
-    noCallback = noCallback + 1
-    RestManager.getItems(t.type, t.subtype)
 end
-
-function getSubMenuRest(event)
-    -- Alpha
-    local t = event.target
-    for z = 1, #submenuRest, 1 do 
-        submenuRest[z].alpha = .01
-    end
-    t.alpha = .4
-    
-    -- Set new rows
-    coupons[3].type = t.type
-    coupons[1]:deleteAllRows()
-    Globals.CurrentRest = Globals.Restaurantes[t.type]
-    setRestaurants()
-end
-
-local function onRowRender( event )
-
-   --Set up the localized variables to be passed via the event table
-   local row = event.row
-   local id = row.index
-    
-   row.nameText = display.newText( Globals.CurrentRest[id][1], 12, 0, "Chivo", 18 )
-   row.nameText.anchorX = 0
-   row.nameText.anchorY = 0.5
-   row.nameText:setFillColor( 0 )
-   row.nameText.y = 20
-   row.nameText.x = 20
-
-   row.phoneText = display.newText( Globals.CurrentRest[id][2], 12, 0, "Chivo", 18 )
-   row.phoneText.anchorX = 0
-   row.phoneText.anchorY = 0.5
-   row.phoneText:setFillColor( 0.5 )
-   row.phoneText.y = 40
-   row.phoneText.x = 20
-
-   row:insert( row.nameText )
-   row:insert( row.phoneText )
-   return true
-end
-
-function hideRestMenus()
-    if restMenuGrp.x == 0 then
-        coupons[1]:deleteAllRows()
-        coupons[1]:removeSelf()
-        coupons[1] = nil
-        transition.to( restMenuGrp, { time=500, x = 160 } )
-        transition.to( scrollView, { time=500, width = intW, x = midW } )
+function hideMenuFilter()
+    if subMenuGrp.alpha == 1 then
+        if #coupons > 0 then if coupons[2].method == 'search' then coupons[2].x = midW - 30 end end
+        transition.to( mask, { alpha = 0, time = 400, transition = easing.outQuad } )
+        transition.to( subMenuGrp, { alpha = 0, time = 400, transition = easing.outQuad } )
     end
 end
 
 function searchDir(event)
-    -- Set new rows
-    local noMenu = coupons[3].type
-    coupons[1]:deleteAllRows()
-    Globals.CurrentRest = {}
-    local toFind = coupons[2].text:upper()
-    for z = 1, #Globals.Restaurantes[noMenu], 1 do 
-        if string.match(Globals.Restaurantes[noMenu][z][1]:upper(), toFind) then
-            Globals.CurrentRest[#Globals.CurrentRest + 1 ] = Globals.Restaurantes[noMenu][z]
+    -- Cargar por tipo
+    if subMenuGrp.alpha == 0 then
+        Globals.CurrentRest = {}
+        for z = 1, #bgSubMenu, 1 do bgSubMenu[z].alpha = .1 end
+        bgSubMenu[1].alpha = .5
+        local toFind = coupons[2].text:upper()
+        for i = 1, #Globals.Directory do
+            if string.match(Globals.Directory[i].name:upper(), toFind) then
+                table.insert(Globals.CurrentRest, Globals.Directory[i])
+            end
         end
+        loadRestaurants()
+        native.setKeyboardFocus(nil)
     end
-    setRestaurants()
 end
 function searchCancel(event)
-    event.target.alpha = 0
-    coupons[2].text = ''
-    
-    -- Set new rows
-    typeS = coupons[3].type
-    coupons[1]:deleteAllRows()
-    Globals.CurrentRest = Globals.Restaurantes[typeS]
-    setRestaurants()
+    if subMenuGrp.alpha == 0 then
+        -- Hide button
+        event.target.alpha = 0
+        coupons[2].text = ''
+        for z = 1, #bgSubMenu, 1 do bgSubMenu[z].alpha = .1 end
+        bgSubMenu[1].alpha = .5
+        -- Set new rows
+        Globals.CurrentRest = Globals.Directory
+        loadRestaurants()
+        native.setKeyboardFocus(nil)
+    end
 end
 function onTxtSearch(event)
     if event.target.text == '' then
@@ -235,116 +189,249 @@ local function reloadConn()
     end
 end
 
-function loadRestaurants()
-    cleanHome()
-    hideSubmenu()
-    -- Stop Loading
-    loadingGrp.alpha = 0
-    loading:setSequence("stop")
-    -- Show menu
-    transition.to( restMenuGrp, { time=500, x = 0 } )
-    transition.to( scrollView, { time=500, width = 320, x = 160 } )
+function showFilter()
+    menuGrp.x = -60
+    title.x = 250
+end
+function hideFilter()
+    menuGrp.x = 0
+    title.x = 230
+end
+
+local function onRowRender( event )
+    --Set up the localized variables to be passed via the event table
+    local row = event.row
+    local id = row.index
     
-    -- Create Table View
-    coupons[1] = widget.newTableView {
-        height = intH - 165,
-        width = 320,
-        left = 80,
-        top = 60,
-        onRowRender = onRowRender
-    }
-    scrollView:insert( coupons[1] )
+    row.nameText = display.newText( Globals.CurrentRest[id].name, 12, 0, "Chivo", 20 )
+    row.nameText.anchorX = 0
+    row.nameText.anchorY = 0.5
+    row.nameText:setFillColor( 0 )
+    row.nameText.x = 55
+    row.nameText.y = 27
     
-    coupons[2] = native.newTextField(midW - 50, 30, 220, 60 )
-    coupons[2].method = "search"
-    coupons[2].hasBackground = false
-    scrollView:insert( coupons[2] )
-    coupons[2]:addEventListener( "userInput", onTxtSearch )
+    row.shape = display.newRect( row, midW, 54, intW, 30 )
+    row.shape:setFillColor( {
+        type = 'gradient',
+        color1 = { 1, 1 }, 
+        color2 = { .9, .7 },
+        direction = "top"
+    } )
     
-    coupons[3] = display.newImage("img/btn/btnSearch.png", true) 
-    coupons[3].type = 1
-    coupons[3].x = 370
-    coupons[3].y = 30
-    scrollView:insert( coupons[3] )
-    coupons[3]:addEventListener( "tap", searchDir )
-    
-    coupons[4] = display.newImage("img/btn/btnClose.png", true) 
-    coupons[4].x = 310
-    coupons[4].y = 30
-    coupons[4].alpha = 0
-    scrollView:insert( coupons[4] )
-    coupons[4]:addEventListener( "tap", searchCancel )
-    
-    -- Load
-    for z = 1, #submenuRest, 1 do 
-        submenuRest[z].alpha = .01
+    if Globals.CurrentRest[id].isFav == '0' or Globals.CurrentRest[id].isFav == 0 then
+        row.restMark = display.newImage( row, "img/btn/restMark"..Globals.CurrentRest[id].directoryTypeId..".png", true) 
+        row.restMark.x = 435
+        row.restMark.y = 35
+    else
+        local path = system.pathForFile( Globals.CurrentRest[id].image, system.TemporaryDirectory )
+        local fhd = io.open( path )
+        -- Determine if file exists
+        if fhd then
+            fhd:close()
+            row.restMark = display.newImage(row, Globals.CurrentRest[id].image, system.TemporaryDirectory )
+            row.restMark.x = 430
+            row.restMark.y = 35
+        else
+            -- Get from remote
+            display.loadRemoteImage( settings.url .. 'assets/img/app/directory/' .. Globals.CurrentRest[id].image, 
+            "GET", 
+            function ( event )
+                if ( event.isError ) then
+                else
+                    event.target.x = 430
+                    event.target.y = 35
+                    row:insert(event.target)
+                end
+            end, Globals.CurrentRest[id].image, system.TemporaryDirectory )
+        end
     end
-    submenuRest[1].alpha = .4
-    Globals.CurrentRest = Globals.Restaurantes[1]
-    setRestaurants()
+    
+    row.iconPhone = display.newImage( row, "img/btn/iconPhone.png", true) 
+    row.iconPhone.x = 70
+    row.iconPhone.y = 54
+
+    row.phoneText = display.newText( Globals.CurrentRest[id].phone, 12, 0, "Chivo", 18 )
+    row.phoneText.anchorX = 0
+    row.phoneText.anchorY = 0.5
+    row.phoneText:setFillColor( 0.3 )
+    row.phoneText.x = 90
+    row.phoneText.y = 54
+
+    row:insert( row.nameText )
+    row:insert( row.phoneText )
+    return true
+end
+
+function getDirectoryType(event)
+    -- Remove selections
+    for z = 1, #bgSubMenu, 1 do
+        bgSubMenu[z].alpha = .1
+    end
+    -- Set new selection
+    local t = event.target
+    t.alpha = .5
+    
+    if t.cat == 'Coupon' then
+        cleanHome()
+        noCallback = noCallback + 1
+        if t.type == '0' or t.type == 0 then
+            RestManager.getItems(Globals.promoCat)
+        else
+            RestManager.getItems(Globals.promoCat, t.type)
+        end
+    else
+        -- Clear elements
+        Globals.CurrentRest = {}
+        coupons[2].text = ''
+        coupons[4].alpha = 0
+        native.setKeyboardFocus(nil)
+        -- Cargar por tipo
+        if t.type == '0' or t.type == 0 then
+            Globals.CurrentRest = Globals.Directory
+        else
+            for i = 1, #Globals.Directory do
+                if Globals.Directory[i].directoryTypeId == t.type then
+                    table.insert(Globals.CurrentRest, Globals.Directory[i])
+                end
+            end
+        end
+        loadRestaurants()
+    end
+end
+
+function loadSubmenu()
+    clearSubMenu()
+    bgFloatMenu.height = #Globals.SubMenu * 60
+    local h = display.topStatusBarContentHeight
+    for z = 1, #Globals.SubMenu, 1 do 
+        submenu[z] = display.newGroup()
+        subMenuGrp:insert(submenu[z])
+        local tmpPosc = (35 + h) + (60 * z)
+
+        bgSubMenu[z] = display.newRect(submenu[z], 360, tmpPosc, 240, 50 )
+        bgSubMenu[z]:setFillColor( .2 ) 
+        bgSubMenu[z].alpha = .1
+        bgSubMenu[z].cat = Globals.SubMenu[z].type
+        if z == 1 then bgSubMenu[z].alpha = .5 end
+        bgSubMenu[z].type = Globals.SubMenu[z].id
+        bgSubMenu[z]:addEventListener( "tap", getDirectoryType )
+
+        local imgIcon = display.newImage(submenu[z], "img/btn/btn".. Globals.SubMenu[z].type .. Globals.SubMenu[z].id ..".png", true) 
+        imgIcon.x = 280
+        imgIcon.y = tmpPosc
+
+        local desc = display.newText( submenu[z], Globals.SubMenu[z].name, 390, tmpPosc, 160, 18, "Chivo", 16)
+        desc:setFillColor( .8, .8, .8 )
+
+        local line = display.newRect(submenu[z], 360, tmpPosc + 30, 180, 1 )
+        line.alpha = .2
+    end
+end
+function clearSubMenu()
+    for z = 1, #bgSubMenu, 1 do
+        bgSubMenu[z]:removeSelf()
+        bgSubMenu[z] = nil
+    end
+    for z = 1, #submenu, 1 do
+        submenu[z]:removeSelf()
+        submenu[z] = nil
+    end
+    submenu = {}
+    bgSubMenu = {}
+end
+
+function loadCouponFilter(typeS)
+    if typeS == 3 then Globals.SubMenu = Globals.CouponType1 end
+    if typeS == 4 then Globals.SubMenu = Globals.CouponType2 end
+    loadSubmenu()
+end
+
+function loadDirectory()
+    if  loadingGrp.alpha == 0 then
+        cleanHome()
+    end
+    
+    if #Globals.Directory == 0 then
+        -- Load info from cloud
+        RestManager.getDirectory()
+    else
+        -- Cargar menu
+        Globals.SubMenu = Globals.DirectoryType
+        loadSubmenu()
+        
+        -- Stop Loading
+        loadingGrp.alpha = 0
+        loading:setSequence("stop")
+        
+        -- Create Table View
+        coupons[1] = widget.newTableView {
+            height = scrollView.height - 60,
+            width = intW,
+            left = 0,
+            top = 60,
+            onRowRender = onRowRender
+        }
+        scrollView:insert( coupons[1] )
+
+        coupons[2] = native.newTextField(midW - 30, 30, 280, 60 )
+        coupons[2].method = "search"
+        coupons[2].hasBackground = false
+        scrollView:insert( coupons[2] )
+        coupons[2]:addEventListener( "userInput", onTxtSearch )
+
+        coupons[3] = display.newImage("img/btn/btnSearch.png", true) 
+        coupons[3].type = 1
+        coupons[3].x = intW - 40
+        coupons[3].y = 30
+        scrollView:insert( coupons[3] )
+        coupons[3]:addEventListener( "tap", searchDir )
+
+        coupons[4] = display.newImage("img/btn/btnClose.png", true) 
+        coupons[4].x = intW - 100
+        coupons[4].y = 30
+        coupons[4].alpha = 0
+        scrollView:insert( coupons[4] )
+        coupons[4]:addEventListener( "tap", searchCancel )
+        
+        coupons[5] = display.newImage("img/btn/bgTxtSearch.png", true) 
+        coupons[5].x = midW - 30
+        coupons[5].y = 50
+        scrollView:insert( coupons[5] )
+        
+        -- Cargamos todos los registros
+        Globals.CurrentRest = Globals.Directory
+        loadRestaurants()
+        
+    end
+end
+
+function loadRestaurants()
+    -- Set Rows
+    if coupons[1]:getNumRows() > 0 then
+        coupons[1]:deleteAllRows()
+    end
+    print(#Globals.CurrentRest)
+    for i = 1, #Globals.CurrentRest do
+        local rowHeight = 70
+        local rowColor = { default={ 1, 1, 1 }, over={ 1, 0.5, 0, 0.2 } }
+        local lineColor = { 1 }
+        
+        -- Insert a row into the tableView
+        coupons[1]:insertRow({
+            rowHeight = rowHeight,
+            rowColor = rowColor,
+            lineColor = lineColor
+        })
+    end
 end
 
 -- Obtenemos los datos de la web
 function loadBy(type)
-    hideRestMenus()
     cleanHome()
-    hideSubmenu()
+    --hideSubmenu()
+    Globals.promoCat = type
     noCallback = noCallback + 1
     RestManager.getItems(type)
-end
-
--- Armamos el submenu
-function loadSubmenu(items, type)
-    if not(subMenuGrp.y == 0) then
-        -- Show filter menu
-        menuGrp.x = -60
-        title.x = 230
-        
-        local spcIcn = ((6 - #items) * 40)
-        for z = 1, #items, 1 do 
-            local newX = ((z * 80) - 40) + spcIcn
-            submenu[z] = display.newImage("img/btn/submenu".. items[z].id ..".png", true) 
-            submenu[z].x = newX
-            submenu[z].y = intH - 35
-            submenu[z].type = type
-            submenu[z].subtype = items[z].id
-            submenu[z]:addEventListener( "tap", getSubMenu )
-            subMenuGrp:insert(submenu[z])
-
-            submenuTxt[z] = display.newText( Globals.CouponType[tonumber(items[z].id)], newX, intH - 18, "Chivo", 10)
-            submenuTxt[z]:setFillColor( 1 )
-            subMenuGrp:insert(submenuTxt[z]) 
-
-            if z < #items then 
-                submenuline[z] = display.newRect( newX + 40, intH - 35, 2, 70 )
-                subMenuGrp:insert(submenuline[z])
-            end
-
-        end
-        transition.to( subMenuGrp, { time=500, y = 0 } )
-    end
-end
-
--- Limpiamos botones y ocultamos la barra
-function hideSubmenu()
-    if subMenuGrp.x < 0 then
-        -- Hide filter menu
-        menuGrp.x = -60
-        title.x = 255
-        
-        for z = 1, #submenu, 1 do 
-            submenu[z]:removeEventListener( "tap", getSubMenu )
-            submenu[z]:removeSelf()
-            submenu[z] = nil
-            submenuTxt[z]:removeSelf()
-            submenuTxt[z] = nil
-        end
-        for z = 1, #submenuline, 1 do 
-            submenuline[z]:removeSelf()
-            submenuline[z] = nil
-        end
-        transition.to( subMenuGrp, { time=500, y = 70 } )
-    end
 end
 
 -- Cargamos imagenes
@@ -652,23 +739,6 @@ local function clearTempDir()
     end
 end
 
-function setRestaurants(rest)
-    -- Set Rows
-    for i = 1, #Globals.CurrentRest do
-
-        local rowHeight = 70
-        local rowColor = { default={ 1, 1, 1 }, over={ 1, 0.5, 0, 0.2 } }
-        local lineColor = { 0.5, 0.5, 0.5 }
-        
-        -- Insert a row into the tableView
-        coupons[1]:insertRow({
-            rowHeight = rowHeight,
-            rowColor = rowColor,
-            lineColor = lineColor
-        })
-    end
-end
-
 ---------------------------------------------------------------------------------
 -- TIMERS
 ---------------------------------------------------------------------------------
@@ -734,6 +804,7 @@ function scene:createScene( event )
 	homeScreen:insert(btnMenu)
     btnMenu:addEventListener( "tap", showMenu )
     
+    -- Menu Toolbar Group
     menuGrp = display.newGroup()
     homeScreen:insert(menuGrp)
     
@@ -757,69 +828,7 @@ function scene:createScene( event )
 	filter.x = intW + 30
 	filter.y = 30 + h
 	menuGrp:insert(filter)
-    filter:addEventListener( "tap", doFilter )
-    
-    -- Create submenu bar
-    subMenuGrp = display.newGroup()
-    homeScreen:insert(subMenuGrp)
-    bottomBar = display.newRect( intW + 90, (65 + h), 160, intH - (65 + h) )
-    bottomBar.anchorY = 0
-    bottomBar:setFillColor( 0 ) 
-	subMenuGrp:insert(bottomBar)
-    
-    -- Create Restaurant Menu
-    local optsMenu = {
-        'Cafeterias',
-        'Comida Mexicana',
-        'Comida Oriental',
-        'Comida Europea',
-        'Comida Rapida',
-        'Comida Saludable',
-        'Carnes y Cortes',
-        'Pescados y Mariscos'
-    }
-    restMenuGrp = display.newGroup()
-    homeScreen:insert(restMenuGrp)
-    rightBar = display.newRect( intW - 80, midH + 52, 160, intH - 104 )
-    rightBar:setFillColor( titleGradient ) 
-	restMenuGrp:insert(rightBar)
-    
-    local spcMenu = (intH - 130) / #optsMenu
-    for z = 1, #optsMenu, 1 do 
-        local newY = (z * spcMenu) + 68
-        local image = display.newImage("img/btn/btnRest".. z ..".png", true) 
-        image.x = 350
-        image.y = newY
-        restMenuGrp:insert(image)
-        
-        submenuRest[z] = display.newRect( 400, newY, 160, spcMenu+2 )
-        submenuRest[z].alpha = .01
-        submenuRest[z].type = z
-        restMenuGrp:insert(submenuRest[z])
-        submenuRest[z]:addEventListener( "tap", getSubMenuRest )
-        if z == 1 then submenuRest[z].alpha = .4 end
-        
-        if z < #optsMenu then 
-            local line = display.newRect( 400, newY + (spcMenu/2), 120, 2 )
-            line.alpha = .2
-            restMenuGrp:insert(line)
-        end
-        
-        local desc = display.newText( optsMenu[z], 430, newY + 2, 100, 40, "Chivo", 16)
-        desc:setFillColor( .8, .8, .8 )
-        restMenuGrp:insert(desc)
-    end
-    
-    local borderLeft = display.newRect( 320, midH + 52, 4, intH -104 )
-    borderLeft:setFillColor( {
-        type = 'gradient',
-        color1 = { .4, .4, .4, .2 }, 
-        color2 = { .1, .1, .1, .7 },
-        direction = "left"
-    } ) 
-    borderLeft:setFillColor( 0, 0, 0 ) 
-    restMenuGrp:insert(borderLeft)
-    restMenuGrp.x = 160
+    filter:addEventListener( "tap", showMenuFilter )
     
     -- Creamos la mascara
     mask = display.newRect( display.contentCenterX, display.contentCenterY, intW, intH )
@@ -827,6 +836,15 @@ function scene:createScene( event )
     mask.alpha = 0
     homeScreen:insert(mask)
     mask:addEventListener( "tap", hideMenu )
+    
+    -- Create submenu bar
+    subMenuGrp = display.newGroup()
+    homeScreen:insert(subMenuGrp)
+    bgFloatMenu = display.newRoundedRect( intW - 120, (65 + h), 260, 400, 10 )
+    bgFloatMenu.anchorY = 0
+    subMenuGrp.alpha = 0
+    bgFloatMenu:setFillColor( 0 ) 
+	subMenuGrp:insert(bgFloatMenu)
     
     --Creamos la pantalla del Menu
     settings = DBManager.getSettings()
@@ -863,7 +881,8 @@ function scene:createScene( event )
     
     clearTempDir()
     if networkConnection() then
-        loadBy(5)
+        RestManager.getSubmenus()
+        loadBy(1)
     else
         loadingGrp.alpha = 0
         NoConnGrp.alpha = 1

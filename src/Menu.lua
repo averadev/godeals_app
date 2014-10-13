@@ -53,9 +53,19 @@ function Menu:new()
         changeTitle(opts[menu.type][2])
         -- Show Data
         timer.performWithDelay( 500, function()
+            -- Do things
             hideMenu()
+            hideFilter()
+                
+            if menu.type == 3 or menu.type == 4 then
+                showFilter()
+                loadCouponFilter(menu.type)
+            end
+                
+            -- Load data
             if menu.type == 7 then
-                loadRestaurants()
+                showFilter()
+                loadDirectory()
             elseif menu.type == 8 then -- Cerrar session
                 timer.performWithDelay( 500, function() logout() end, 1)
             else

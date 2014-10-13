@@ -5,6 +5,7 @@ local RestManager = {}
     local json = require("json")
     local crypto = require("crypto")
     local DBManager = require('src.resources.DBManager')
+    local Globals = require('src.resources.Globals')
 
 	--Open rackem.db.  If the file doesn't exist it will be created
 	RestManager.getCoupons = function()
@@ -48,9 +49,6 @@ local RestManager = {}
                 local data = json.decode(event.response)
                 if data.success then
                     loadImages(data.items)
-                    if type==3 or type==4 then
-                        loadSubmenu(data.submenu, type)
-                    end
                 else
                     native.showAlert( "Go Deals", data.message, { "OK"})
                 end
@@ -122,6 +120,7 @@ local RestManager = {}
         password = crypto.digest(crypto.md5, password)
         local url = settings.url
         url = url.."api/validateUser/format/json"
+        url = url.."/idApp/"..settings.idApp
         url = url.."/email/"..email
         url = url.."/password/"..password
         url = string.gsub(url, "%@", "%%40")
@@ -174,6 +173,47 @@ local RestManager = {}
             else
                 local data = json.decode(event.response)
                 loadImages(data.items)
+            end
+            return true
+        end
+        -- Do request
+        network.request( url, "GET", callback )  
+	end
+
+    RestManager.getDirectory = function()
+        local settings = DBManager.getSettings()
+        -- Set url
+	    local url = settings.url
+        url = url.."api/getDirectory/format/json"
+        url = url.."/idApp/"..settings.idApp
+        
+        local function callback(event)
+            if ( event.isError ) then
+            else
+                local data = json.decode(event.response)
+                Globals.Directory = data.items
+                loadDirectory()
+            end
+            return true
+        end
+        -- Do request
+        network.request( url, "GET", callback )  
+	end
+
+    RestManager.getSubmenus = function()
+        local settings = DBManager.getSettings()
+        -- Set url
+	    local url = settings.url
+        url = url.."api/getSubmenus/format/json"
+        url = url.."/idApp/"..settings.idApp
+        
+        local function callback(event)
+            if ( event.isError ) then
+            else
+                local data = json.decode(event.response)
+                Globals.DirectoryType = data.directoryType
+                Globals.CouponType1 = data.couponType1
+                Globals.CouponType2 = data.couponType2
             end
             return true
         end

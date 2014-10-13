@@ -10,7 +10,6 @@ application = {
 	content = {
 		width = display.pixelWidth / mediaRes,
         height = display.pixelHeight / mediaRes, 
-        scale = "letterBox",
 
         imageSuffix = {
             ["-small"] = 0.375,
