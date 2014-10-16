@@ -22,7 +22,7 @@ local homeScreen = display.newGroup()
 
 -- Objects
 local scrollView, menuGrp, subMenuGrp, settings, mask 
-local btnMenu, loading, title, loadingGrp, NoConnGrp, bgFloatMenu
+local btnMenu, loading, title, loadingGrp, bgFloatMenu
 local svHeightY = {}
 local coupons = {}
 local imageItems = {}
@@ -61,8 +61,8 @@ end
 function hideMenu(event)
     if not isHome and not isBreak then
         isBreak = true
-        transition.to( homeScreen, { x = homeScreen.x - 400, time = 400, transition = easing.outExpo } )
-        transition.to( menuScreen, { x = menuScreen.x - 400, time = 400, transition = easing.outExpo } )
+        transition.to( homeScreen, { x = 0, time = 400, transition = easing.outExpo } )
+        transition.to( menuScreen, { x = - 400, time = 400, transition = easing.outExpo } )
         transition.to( mask, { alpha = 0, time = 400, transition = easing.outQuad } )
         timer.performWithDelay( 500, function()
             isHome = true
@@ -70,6 +70,10 @@ function hideMenu(event)
         end, 1 )
     end
     hideMenuFilter()
+end
+
+function moveHome(xPosH)
+    homeScreen.x = xPosH
 end
 
 function showCoupon(event)
@@ -95,8 +99,8 @@ function showFav(event)
         cleanHome()
         --hideSubmenu()
         noCallback = noCallback + 1
-        RestManager.getFav()
         title.text = "Favoritos"
+        RestManager.getFav()
     end
 end
 
@@ -172,9 +176,12 @@ function changeTitle(value)
     title.text = value
 end
 
-local function networkConnection()
+function networkConnection(screenError)
     local netConn = require('socket').connect('www.google.com', 80)
     if netConn == nil then
+        if screenError then
+            notConnection()
+        end
         return false
     end
     netConn:close()
@@ -183,9 +190,12 @@ end
 
 local function reloadConn()
     audio.play(fxTap)
-    if networkConnection() then
-        NoConnGrp.alpha = 0
+    if networkConnection(false) then
+        coupons[4].alpha = 0
         loadBy(1)
+    else
+        coupons[4].alpha = 0
+        transition.to( coupons[4], { alpha = 1, time = 800} )
     end
 end
 
@@ -196,6 +206,52 @@ end
 function hideFilter()
     menuGrp.x = 0
     title.x = 230
+end
+
+function emptyFav()
+    coupons[1] = display.newImage( scrollView, "img/btn/errorOmg.png", true) 
+    loadingGrp.alpha = 0
+    
+    coupons[2] = display.newText( scrollView, "¡Oh!", 12, 0, "Chivo", 30 )
+    coupons[2].y = - 230
+    coupons[2]:setFillColor( .3 )
+    
+    coupons[3] = display.newText( scrollView, "Aún no tienes Deals marcados como favoritos.", 12, 0, "Chivo", 20 )
+    coupons[3].y = - 190
+    coupons[3]:setFillColor( .15 )
+    
+    coupons[4] = display.newText( scrollView, "Puedes marcar tu Deal como Favorito", 12, 0, "Chivo", 20 )
+    coupons[4].y = 140
+    coupons[4]:setFillColor( .3 )
+    
+    coupons[5] = display.newText( scrollView, "en el detalle del mismo ;)", 12, 0, "Chivo", 20 )
+    coupons[5].y = 165
+    coupons[5]:setFillColor( .3 )
+end
+
+
+function notConnection()
+    title.text = ''
+    loadingGrp.alpha = 0
+
+    coupons[1] = display.newImage( scrollView, "img/btn/errorSad.png", true) 
+    loadingGrp.alpha = 0
+    
+    coupons[2] = display.newText( scrollView, "¡Emmm!", 12, 0, "Chivo", 30 )
+    coupons[2].y = - 230
+    coupons[2]:setFillColor( .3 )
+    
+    coupons[3] = display.newText( scrollView, "Al parecer no hay conexión a internet.", 12, 0, "Chivo", 20 )
+    coupons[3].y = - 190
+    coupons[3]:setFillColor( .15 )
+    
+    coupons[4] = display.newRoundedRect( scrollView, 0, 160, 380, 60, 10 )
+    coupons[4]:addEventListener( "tap", reloadConn )
+    coupons[4]:setFillColor( .5 )
+    
+    coupons[5] = display.newText( scrollView, "Volver a intentar (^_^)/", 12, 0, "Chivo", 20 )
+    coupons[5].y = 160
+    coupons[5]:setFillColor( 1 )
 end
 
 local function onRowRender( event )
@@ -341,8 +397,8 @@ function clearSubMenu()
 end
 
 function loadCouponFilter(typeS)
-    if typeS == 3 then Globals.SubMenu = Globals.CouponType1 end
-    if typeS == 4 then Globals.SubMenu = Globals.CouponType2 end
+    if typeS == 3 then Globals.SubMenu = Globals.CouponType2 end
+    if typeS == 4 then Globals.SubMenu = Globals.CouponType1 end
     loadSubmenu()
 end
 
@@ -662,7 +718,7 @@ function setStdCoupon(obj)
     local lastC = #coupons + 1
     
     -- Generamos contenedor
-    coupons[lastC] = display.newContainer( 444, 169 )
+    coupons[lastC] = display.newContainer( 442, 167 )
     coupons[lastC].index = lastC
     coupons[lastC].x = midW
     coupons[lastC].type = 2
@@ -672,8 +728,16 @@ function setStdCoupon(obj)
     
     -- Agregamos rectangulo alfa al pie
     local maxShape = display.newRect( 0, 0, 480, 169 )
-    maxShape:setFillColor( 1, 1, 1 )
+    maxShape:setFillColor( .7 )
     coupons[lastC]:insert( maxShape )
+    local rShape = display.newRect( 110, 0, 218, 166 )
+    rShape:setFillColor( {
+        type = 'gradient',
+        color1 = { 1 }, 
+        color2 = { .95 },
+        direction = "up"
+    } )
+    coupons[lastC]:insert( rShape )
     
     -- Agregamos imagen
     imageItems[obj.id].alpha = 1
@@ -694,7 +758,7 @@ function setStdCoupon(obj)
         fontSize = 22,
         align = "center"
     })
-    txtTitle:setFillColor( .27, .54, 0 )
+    txtTitle:setFillColor( 0, .54, 0 )
     coupons[lastC]:insert(txtTitle)
     
      -- Agregamos textos
@@ -706,7 +770,7 @@ function setStdCoupon(obj)
         txtSubtitle2:setFillColor( 0, 0, 0 )
         coupons[lastC]:insert(txtSubtitle2)
     elseif obj.type == 3 or obj.type == 4 then
-        local txtSubtitle1 = display.newText( obj.partnerName, 110, 45, 200, 46, "Chivo", 18)
+        local txtSubtitle1 = display.newText( obj.partnerName, 110, 45, 200, 46, "Chivo", 20)
         txtSubtitle1:setFillColor( 0, 0, 0 )
         coupons[lastC]:insert(txtSubtitle1)
         local txtSubtitle2 = display.newText( obj.cityName, 110, 62, 200, 23, "Chivo", 18)
@@ -766,7 +830,7 @@ function scene:createScene( event )
     }
     
     -- Lista de Cupones
-    svHeightY[1] = intH - 63 + h
+    svHeightY[1] = intH - (63 + h)
     scrollView = widget.newScrollView
     {
         left = 0,
@@ -862,30 +926,10 @@ function scene:createScene( event )
     title:setFillColor( .3, .3, .3 )
     loadingGrp:insert(title)
     
-    -- Sin conexion
-    NoConnGrp = display.newGroup()
-    homeScreen:insert(NoConnGrp)
-    local robot = display.newImage("img/btn/robot.png", true) 
-	robot.x = midW
-	robot.y = midH
-	NoConnGrp:insert(robot)
-    local btnReload = display.newImage("img/btn/btnReloadCon.png", true) 
-	btnReload.x = midW
-	btnReload.y = midH + 130
-	NoConnGrp:insert(btnReload)
-    btnReload:addEventListener( "tap", reloadConn )
-    local title2 = display.newText( "No se pudo conectar a Internet, volver a intentar.", midW, midH+130, "Chivo", 16)
-    title2:setFillColor( .3, .3, .3 )
-    NoConnGrp:insert(title2)
-    NoConnGrp.alpha = 0
-    
     clearTempDir()
-    if networkConnection() then
+    if networkConnection(true) then
         RestManager.getSubmenus()
         loadBy(1)
-    else
-        loadingGrp.alpha = 0
-        NoConnGrp.alpha = 1
     end
 end
 

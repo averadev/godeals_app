@@ -31,41 +31,43 @@ local RestManager = {}
 	end
 
 	RestManager.getItems = function(type, subtype)
-        local settings = DBManager.getSettings()
-        -- Set url
-	    local url = settings.url
-        url = url.."api/getItems/format/json"
-        url = url.."/idApp/"..settings.idApp
-        url = url.."/type/"..type
-        if not (subtype == nil) then
-            url = url.."/subtype/"..subtype
-        end
-        print(url)
-        
-        local function callback(event)
-            if ( event.isError ) then
-                native.showAlert( "Go Deals", event.isError, { "OK"})
-            else
-                local data = json.decode(event.response)
-                if data.success then
-                    loadImages(data.items)
-                else
-                    native.showAlert( "Go Deals", data.message, { "OK"})
-                end
+        if networkConnection(true) then
+            local settings = DBManager.getSettings()
+            -- Set url
+            local url = settings.url
+            url = url.."api/getItems/format/json"
+            url = url.."/idApp/"..settings.idApp
+            url = url.."/type/"..type
+            if not (subtype == nil) then
+                url = url.."/subtype/"..subtype
             end
-            return true
+            print(url)
+
+            local function callback(event)
+                if ( event.isError ) then
+                    native.showAlert( "Go Deals", event.isError, { "OK"})
+                else
+                    local data = json.decode(event.response)
+                    if data.success then
+                        loadImages(data.items)
+                    else
+                        native.showAlert( "Go Deals", data.message, { "OK"})
+                    end
+                end
+                return true
+            end
+            -- Do request
+            network.request( url, "GET", callback )  
         end
-        -- Do request
-        network.request( url, "GET", callback )  
 	end
 
 	RestManager.getServices = function(type)
         local settings = DBManager.getSettings()
         -- Set url
-	    local url = settings.url
+        local url = settings.url
         url = url.."api/getServices/format/json"
         url = url.."/idApp/"..settings.idApp
-    
+
         local function callback(event)
             if ( event.isError ) then
                 native.showAlert( "Go Deals", event.isError, { "OK"})
@@ -80,7 +82,7 @@ local RestManager = {}
             return true
         end
         -- Do request
-        network.request( url, "GET", callback )  
+        network.request( url, "GET", callback ) 
 	end
 
     RestManager.createUser = function(email, password, name, fbId)
@@ -98,8 +100,8 @@ local RestManager = {}
         
         local function callback(event)
             if ( event.isError ) then
-                native.showAlert( "Go Deals", event.isError, { "OK"})
             else
+                hideLoadLogin()
                 local data = json.decode(event.response)
                 if data.success then
                     DBManager.updateUser(data.idApp, email, password, name, fbId)
@@ -127,11 +129,10 @@ local RestManager = {}
     
         local function callback(event)
             if ( event.isError ) then
-                native.showAlert( "Go Deals", event.isError, { "OK"})
             else
+                hideLoadLogin()
                 local data = json.decode(event.response)
                 if data.success then
-                    DBManager.updateUser(data.idApp, email, password, '', '')
                     gotoHome()
                 else
                     native.showAlert( "Go Deals", data.message, { "OK"})
@@ -162,42 +163,50 @@ local RestManager = {}
     end
 
     RestManager.getFav = function()
-        local settings = DBManager.getSettings()
-        -- Set url
-	    local url = settings.url
-        url = url.."api/getFav/format/json"
-        url = url.."/idApp/"..settings.idApp
-        
-        local function callback(event)
-            if ( event.isError ) then
-            else
-                local data = json.decode(event.response)
-                loadImages(data.items)
+        if networkConnection(true) then
+            local settings = DBManager.getSettings()
+            -- Set url
+            local url = settings.url
+            url = url.."api/getFav/format/json"
+            url = url.."/idApp/"..settings.idApp
+
+            local function callback(event)
+                if ( event.isError ) then
+                else
+                    local data = json.decode(event.response)
+                    if #data.items == 0 then
+                        emptyFav()
+                    else
+                        loadImages(data.items)
+                    end
+                end
+                return true
             end
-            return true
+            -- Do request
+            network.request( url, "GET", callback )  
         end
-        -- Do request
-        network.request( url, "GET", callback )  
 	end
 
     RestManager.getDirectory = function()
-        local settings = DBManager.getSettings()
-        -- Set url
-	    local url = settings.url
-        url = url.."api/getDirectory/format/json"
-        url = url.."/idApp/"..settings.idApp
-        
-        local function callback(event)
-            if ( event.isError ) then
-            else
-                local data = json.decode(event.response)
-                Globals.Directory = data.items
-                loadDirectory()
+        if networkConnection(true) then
+            local settings = DBManager.getSettings()
+            -- Set url
+            local url = settings.url
+            url = url.."api/getDirectory/format/json"
+            url = url.."/idApp/"..settings.idApp
+
+            local function callback(event)
+                if ( event.isError ) then
+                else
+                    local data = json.decode(event.response)
+                    Globals.Directory = data.items
+                    loadDirectory()
+                end
+                return true
             end
-            return true
+            -- Do request
+            network.request( url, "GET", callback )  
         end
-        -- Do request
-        network.request( url, "GET", callback )  
 	end
 
     RestManager.getSubmenus = function()

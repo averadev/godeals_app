@@ -25,6 +25,7 @@ local scroll = {}
 local btnMap = {}
 local iconFav = {}
 local mapG
+local settings
 local currentX = midW
 local currentI = 0
 local leftX, rightX
@@ -208,7 +209,6 @@ local function scrollListener( event )
 		print( "Began: " )
 	elseif "moved" == phase and not (direction == nil) then
         if direction == "right" or direction == "left" then
-            print(event.target:getContentPosition() .. '-' .. currentI )
             if (event.target:getContentPosition() <= 0 and currentI < #Globals.Items) then
                 page[currentI + 1].x = rightX + event.target:getContentPosition() 
             elseif (event.target:getContentPosition() >= 0 and currentI > 1) then
@@ -277,8 +277,6 @@ function getPage(setX, i)
 end 
 
 function buildSportTv(item, i)
-    -- Settings
-    local settings = DBManager.getSettings()
     
     -- Agregamos imagen
     local imgShape = display.newRect( midW, 157, 444, 278 )
@@ -897,6 +895,8 @@ end
 
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
+    -- Settings
+    settings = DBManager.getSettings()
     -- Title Detail
     txtTitle.text = Globals.Items[currentI].title
     getPage(currentX, currentI) -- Current

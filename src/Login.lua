@@ -12,6 +12,7 @@ local widget = require( "widget" )
 local facebook = require( "facebook" )
 local Globals = require('src.resources.Globals')
 local RestManager = require('src.resources.RestManager')
+local Sprites = require('src.resources.Sprites')
 local storyboard = require( "storyboard" )
 local scene = storyboard.newScene()
 
@@ -25,7 +26,8 @@ local fbCommand = 0
 local GET_USER_INFO = 1
 local fbAppID = "750089858383563" 
 local txtSignEmail, txtSignPass, txtCreateEmail, txtCreatePass, txtCreateRePass
-local imgLogo, groupBtn, groupSign, groupCreate
+local imgLogo, groupBtn, groupSign, groupCreate, loadingGrp, loadingL
+local hBar = display.topStatusBarContentHeight
 
 ---------------------------------------------------------------------------------
 -- LISTENERS
@@ -57,14 +59,16 @@ function onTxtFocus(event)
     if ( "began" == event.phase ) then
         -- Interfaz Sign In
         if groupSign.x == 0 and groupSign.y == 0 then
-            transition.to( imgLogo, { y = 50, time = 400, transition = easing.outExpo } )
-            transition.to( groupSign, { y = (-midH + 190), time = 400, transition = easing.outExpo } )
+            transition.to( imgLogo, { y = 60 + hBar, time = 400, transition = easing.outExpo } )
+            transition.to( groupSign, { y = (-midH + 200) + hBar, time = 400, transition = easing.outExpo } )
         -- Interfaz Create
         elseif groupCreate.x == 0 and groupCreate.y == 0 then
-            transition.to( imgLogo, { y = 50, time = 400, transition = easing.outExpo } )
-            transition.to( groupCreate, { y = (-midH + 220), time = 400, transition = easing.outExpo } )
+            transition.to( imgLogo, { y = 60 + hBar, time = 400, transition = easing.outExpo } )
+            transition.to( groupCreate, { y = (-midH + 225) + hBar, time = 400, transition = easing.outExpo } )
         end
     elseif ( "submitted" == event.phase ) then
+        -- Hide Keyboard
+        native.setKeyboardFocus(nil)
         if event.target.method == "create" then
             doCreate()
         else
@@ -74,6 +78,8 @@ function onTxtFocus(event)
 end
 
 function backTxtPositions()
+    -- Hide Keyboard
+    native.setKeyboardFocus(nil)
     -- Interfaz Sign In
     if groupSign.x == 0 and groupSign.y < 0 then
         transition.to( imgLogo, { y = midH / 2, time = 400, transition = easing.outExpo } )
@@ -118,20 +124,46 @@ local function printTable( t, label, level )
 	end
 end
 
+function showLoadLogin()
+    -- Show Login
+    loadingL:setSequence("play")
+    loadingL:play()
+    loadingGrp.alpha = 1
+end
+
+function hideLoadLogin()
+    loadingL:setSequence("stop")
+    loadingGrp.alpha = 0
+end
+
+function networkConnectionL()
+    local netConn = require('socket').connect('www.google.com', 80)
+    if netConn == nil then
+        native.showAlert( "Go Deals", "No se detecto conexión a internet.", { "OK"})
+        return false
+    end
+    netConn:close()
+    return true
+end
+
 function doCreate()
     if txtCreateEmail.text == '' or txtCreatePass.text == '' or txtCreateRePass.text == '' then
-        native.showAlert( "Go Deals", "Campos incompletos :)", { "OK"})
+        native.showAlert( "Go Deals", "El email y password son necesarios.", { "OK"})
     elseif not (txtCreatePass.text == txtCreateRePass.text) then
-        native.showAlert( "Go Deals", "Las contraseñas no coinciden :/", { "OK"})
-    else
+        native.showAlert( "Go Deals", "Los paswords no coinciden.", { "OK"})
+    elseif networkConnectionL() then
+        showLoadLogin()
+        backTxtPositions()
         RestManager.createUser(txtCreateEmail.text, txtCreatePass.text, '', '')
     end 
 end
 
 function doSignIn()
     if txtSignEmail.text == '' or txtSignPass.text == '' then
-        native.showAlert( "Go Deals", "Campos incompletos :)", { "OK"})
-    else
+        native.showAlert( "Go Deals", "El email y password son necesarios.", { "OK"})
+    elseif networkConnectionL() then
+        showLoadLogin()
+        backTxtPositions()
         RestManager.validateUser(txtSignEmail.text, txtSignPass.text)
     end 
 end
@@ -161,8 +193,10 @@ function facebookListener( event )
     end
 end
 function loginFaceBook()
-    fbCommand = 1
-    facebook.login( fbAppID, facebookListener, {"public_profile", "email"} )
+    if networkConnectionL() then
+        fbCommand = 1
+        facebook.login( fbAppID, facebookListener, {"public_profile", "email"} )
+    end
 end
 
 ---------------------------------------------------------------------------------
@@ -203,13 +237,13 @@ function scene:createScene( event )
     groupSign:insert(bgSignPass)
     
     -- TextFields Sign In
-    txtSignEmail = native.newTextField( midW + 50, midH - 45, intW - 140, 80 )
+    txtSignEmail = native.newTextField( midW + 35, midH - 45, 270, 60 )
     txtSignEmail.method = "signin"
     txtSignEmail.inputType = "email"
     txtSignEmail.hasBackground = false
     txtSignEmail:addEventListener( "userInput", onTxtFocus )
 	groupSign:insert(txtSignEmail)
-    txtSignPass = native.newTextField( midW + 50, midH + 45, intW - 140, 80 )
+    txtSignPass = native.newTextField( midW + 35, midH + 45, 270, 60 )
     txtSignPass.method = "signin"
     txtSignPass.isSecure = true
     txtSignPass.hasBackground = false
@@ -241,27 +275,27 @@ function scene:createScene( event )
     groupCreate:insert(bgCreateEmail)
     local bgCreatePass = display.newImage("img/btn/bgTxtPass.png", true) 
     bgCreatePass.x = midW
-    bgCreatePass.y = midH + 15
+    bgCreatePass.y = midH + 05
     groupCreate:insert(bgCreatePass)
     local bgCreateRePass = display.newImage("img/btn/bgTxtPass.png", true) 
     bgCreateRePass.x = midW
-    bgCreateRePass.y = midH + 105
+    bgCreateRePass.y = midH + 85
     groupCreate:insert(bgCreateRePass)
     
     -- TextFields Create
-    txtCreateEmail = native.newTextField( midW + 50, midH - 75, intW - 140, 80 )
+    txtCreateEmail = native.newTextField( midW + 35, midH - 75, 270, 60 )
     txtCreateEmail.method = "create"
     txtCreateEmail.inputType = "email"
     txtCreateEmail.hasBackground = false
 	groupCreate:insert(txtCreateEmail)
     txtCreateEmail:addEventListener( "userInput", onTxtFocus )
-    txtCreatePass = native.newTextField( midW + 50, midH + 15, intW - 140, 80 )
+    txtCreatePass = native.newTextField( midW + 35, midH + 05, 270, 60 )
     txtCreatePass.method = "create"
     txtCreatePass.isSecure = true
     txtCreatePass.hasBackground = false
 	groupCreate:insert(txtCreatePass)
     txtCreatePass:addEventListener( "userInput", onTxtFocus )
-    txtCreateRePass = native.newTextField( midW + 50, midH + 105, intW - 140, 80 )
+    txtCreateRePass = native.newTextField( midW + 35, midH + 85, 270, 60 )
     txtCreateRePass.method = "create"
     txtCreateRePass.isSecure = true
     txtCreateRePass.hasBackground = false
@@ -270,7 +304,7 @@ function scene:createScene( event )
     
     local btnReturn2 = display.newImage("img/btn/btnLoginRegresar.png", true) 
 	btnReturn2.x = midW - 122
-	btnReturn2.y = midH + 190
+	btnReturn2.y = midH + 170
     btnReturn2.height = 58
     btnReturn2.width = 215
 	groupCreate:insert(btnReturn2)
@@ -278,7 +312,7 @@ function scene:createScene( event )
     
     local btnDoCreate = display.newImage("img/btn/btnLoginSignIn.png", true) 
 	btnDoCreate.x = midW + 122
-	btnDoCreate.y = midH + 190
+	btnDoCreate.y = midH + 170
     btnDoCreate.height = 58
     btnDoCreate.width = 215
 	groupCreate:insert(btnDoCreate)
@@ -289,7 +323,7 @@ function scene:createScene( event )
     -- Buttons
     local btnFB = display.newImage("img/btn/btnLoginFaceBook.png", true) 
 	btnFB.x = midW
-	btnFB.y = midH - 40
+	btnFB.y = midH - 50
     btnFB.height = 62
     btnFB.width = 468
 	groupBtn:insert(btnFB)
@@ -297,7 +331,7 @@ function scene:createScene( event )
     
     local btnCreate = display.newImage("img/btn/btnLoginCreate.png", true) 
 	btnCreate.x = midW - 122
-	btnCreate.y = midH + 40
+	btnCreate.y = midH + 50
     btnCreate.height = 58
     btnCreate.width = 215
 	groupBtn:insert(btnCreate)
@@ -305,7 +339,7 @@ function scene:createScene( event )
     
     local btnSignIn = display.newImage("img/btn/btnLoginSignIn.png", true) 
 	btnSignIn.x = midW + 122
-	btnSignIn.y = midH + 40
+	btnSignIn.y = midH + 50
     btnSignIn.height = 58
     btnSignIn.width = 215
 	groupBtn:insert(btnSignIn)
@@ -318,6 +352,19 @@ function scene:createScene( event )
     line[2] = display.newLine(midW+1, midH + 70, midW+1, midH + 20)
 	groupBtn:insert(line[2])
     
+    -- Loading
+    loadingGrp = display.newGroup()
+    screen:insert(loadingGrp)
+    local mask = display.newRect( display.contentCenterX, display.contentCenterY, intW, intH )
+    mask:setFillColor( 0)
+    mask.alpha = .5
+    loadingGrp:insert(mask)
+    local sheet = graphics.newImageSheet(Sprites.loading.source, Sprites.loading.frames)
+    loadingL = display.newSprite(sheet, Sprites.loading.sequences)
+    loadingL.x = midW
+    loadingL.y = midH 
+    loadingGrp:insert(loadingL)
+    hideLoadLogin()
 end
 
 -- Called immediately after scene has moved onscreen:

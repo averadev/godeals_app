@@ -14,7 +14,7 @@ storyboard = require "storyboard"
 
 -- Create and change scene
 local isUser = DBManager.setupSquema()
-DBManager.updateUser(1, "mrfeto@gmail.com", '', 'Alberto Vera', '10152713865899218', '') -- Temporal
+--DBManager.updateUser(1, "mrfeto@gmail.com", '', 'Alberto Vera', '10152713865899218', '') -- Temporal
 
 
 if isUser then

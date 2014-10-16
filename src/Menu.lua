@@ -5,6 +5,7 @@ function Menu:new()
     local self = display.newGroup()
     local menuTipo = {}
     local groups = {}
+    local menuX = 0
     local fxTap = audio.loadSound( "fx/click.wav")
     
     local opts = {
@@ -99,6 +100,55 @@ function Menu:new()
         scrollMenu:insert(txt2)
     end
     
+    -- Scroll Listerner
+    local function scrollListener( event )
+        local phase = event.phase
+        local direction = event.direction
+
+        if "began" == phase then
+        elseif "moved" == phase and not (direction == nil) then
+            if direction == "left" then
+                if event.target:getContentPosition() > 0 then
+                    self.x = 0
+                else
+                    self.x = event.target:getContentPosition() 
+                    pageM.x = event.target:getContentPosition() * (-1)
+                end
+            elseif direction == "right" then
+                
+            end
+        elseif "ended" == phase then
+            self.x = 0
+            pageM.x = 0
+        end
+
+        return true
+    end
+    
+    local function doMoveM(event)
+        local t = event.target
+        if event.phase == "began" then
+            t.isMoving = true
+            menuX = event.x
+        elseif t.isMoving then
+            if event.phase == "moved" then
+                if menuX > event.x then
+                    self.x = event.x - menuX
+                    moveHome(400 + (event.x - menuX))
+                end
+            elseif event.phase == "ended" or event.phase == "cancelled" then
+                t.isMoving = false
+                if (event.x - menuX) > -75 then
+                    self.x = 0
+                    moveHome(400)
+                else
+                    hideMenu()
+                end
+            end
+        end
+        return true
+    end
+    
     -- Creamos la pantalla del menu
     function self:builScreen(settings)
         -- Variables
@@ -130,7 +180,6 @@ function Menu:new()
             id = "scrollMenu",
             horizontalScrollDisabled = true,
             verticalScrollDisabled = false,
-            listener = scrollListener,
             hideBackground = true
         }
         self:insert(scrollMenu)
@@ -176,6 +225,13 @@ function Menu:new()
             end
             
         end 
+        
+        local maskToMove = display.newRect( 200, midH, 400, intH )
+        maskToMove.alpha = .01
+        maskToMove.isMoving = false
+        maskToMove:setFillColor( 0 )
+        maskToMove:addEventListener( "touch", doMoveM )
+        self:insert(maskToMove)
         
         -- Border Right
         local borderRight = display.newRect( 398, midH, 4, intH )
