@@ -171,24 +171,16 @@ end
 function facebookListener( event )
     if ( "session" == event.type ) then
         if ( "login" == event.phase ) then
-            -- Solicitar datos
-            if fbCommand == GET_USER_INFO then
-                local params = {
-                    fields = "email,name,id"
-                }
-                facebook.request( "me", "GET", params )
-            end
+            local params = { fields = "email,name,id" }
+            facebook.request( "me", "GET", params )
         end
     elseif ( "request" == event.type ) then
         if ( not event.isError ) then
             local response = json.decode( event.response )
-            -- Almacenar datos info
-             if fbCommand == GET_USER_INFO then
-                -- printTable( response, "User Info", 3 )
-                if not (response.email == nil) then
-                    RestManager.createUser(response.email, '', response.name, response.id)
-                end
-			end
+            -- printTable( response, "User Info", 3 )
+            if not (response.email == nil) then
+                RestManager.createUser(response.email, '', response.name, response.id)
+            end
         end
     end
 end
