@@ -369,6 +369,7 @@ end
 
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
+    facebook.logout()
     storyboard.removeAll()
 end
 
