@@ -929,8 +929,7 @@ function scene:createScene( event )
     clearTempDir()
     if networkConnection(true) then
         RestManager.getSubmenus()
-        -- loadBy(1)
-        showFav()
+        loadBy(1)
     end
 end
 
