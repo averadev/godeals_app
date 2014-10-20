@@ -5,7 +5,7 @@ function Menu:new()
     local self = display.newGroup()
     local menuTipo = {}
     local groups = {}
-    local menuX = 0
+    local menuX, menuY, maxY, difY, isY, moveDirection = 0, 0, 0, 0, false, ''
     local fxTap = audio.loadSound( "fx/click.wav")
     
     local opts = {
@@ -75,66 +75,61 @@ function Menu:new()
         end, 1 )
     end
     
-    function userData(settings)
-        -- Agregamos avatar
+    function userData(settings, h, isMax)
+        -- Definimos dimenciones
+        local sizeAvatar = 'width=80&height=80'
+        local maskAvatar = ''
+        
+        if isMax then
+            h = h + 20
+            sizeAvatar = 'width=120&height=120'
+            maskAvatar = 'Max'
+        end
+        
+            
         local function networkListenerFB( event )
             -- Verificamos el callback activo
             if ( event.isError ) then
             else
-                local mask = graphics.newMask( "img/bgk/maskAvatar.jpg" )
+                local mask = graphics.newMask( "img/bgk/maskAvatar"..maskAvatar..".jpg" )
                 event.target.x = 90
-                event.target.y = 120
+                event.target.y = h + 60
                 event.target:setMask( mask )
                 scrollMenu:insert( event.target )
             end
         end
         print("http://graph.facebook.com/".. settings.fbId .."/picture?type=normal")
-        display.loadRemoteImage( "http://graph.facebook.com/".. settings.fbId .."/picture?type=large&width=120&height=120", 
+        display.loadRemoteImage( "http://graph.facebook.com/".. settings.fbId .."/picture?type=large&"..sizeAvatar, 
             "GET", networkListenerFB, "avatarFb", system.TemporaryDirectory ) 
         
-        local txt1 = display.newText( settings.name, 270, 105, 200, 27, "Chivo", 24)
+        local txt1 = display.newText( settings.name, 270, h + 45, 200, 27, "Chivo", 24)
         txt1:setFillColor( 1, 1, 1 )
         scrollMenu:insert(txt1)
-        local txt2 = display.newText( settings.email, 270, 130, 200, 20, "Chivo", 15)
+        local txt2 = display.newText( settings.email, 270, h + 70, 200, 20, "Chivo", 15)
         txt2:setFillColor( 1, 1, 1 )
         scrollMenu:insert(txt2)
     end
     
-    -- Scroll Listerner
-    local function scrollListener( event )
-        local phase = event.phase
-        local direction = event.direction
-
-        if "began" == phase then
-        elseif "moved" == phase and not (direction == nil) then
-            if direction == "left" then
-                if event.target:getContentPosition() > 0 then
-                    self.x = 0
-                else
-                    self.x = event.target:getContentPosition() 
-                    pageM.x = event.target:getContentPosition() * (-1)
-                end
-            elseif direction == "right" then
-                
-            end
-        elseif "ended" == phase then
-            self.x = 0
-            pageM.x = 0
-        end
-
-        return true
-    end
-    
+    -- Move Listener
     local function doMoveM(event)
         local t = event.target
         if event.phase == "began" then
             t.isMoving = true
             menuX = event.x
+            menuY = event.y
+            moveDirection = ''
         elseif t.isMoving then
             if event.phase == "moved" then
-                if menuX > event.x then
-                    self.x = event.x - menuX
-                    moveHome(400 + (event.x - menuX))
+                if moveDirection == '' then
+                    if ((event.x - menuX) > 35 or (menuX - event.x) > 35) then
+                        moveDirection = 'horizontal'
+                    end
+                else
+                    -- Horizontal
+                    if menuX > event.x then
+                        self.x = event.x - menuX
+                        moveHome(400 + (event.x - menuX))
+                    end
                 end
             elseif event.phase == "ended" or event.phase == "cancelled" then
                 t.isMoving = false
@@ -144,6 +139,7 @@ function Menu:new()
                 else
                     hideMenu()
                 end
+                moveDirection = ''
             end
         end
         return true
@@ -151,8 +147,10 @@ function Menu:new()
     
     -- Creamos la pantalla del menu
     function self:builScreen(settings)
+        -- Height status bar
+        local h = display.topStatusBarContentHeight
         -- Variables
-        local lastY = 210;
+        local lastY = 63 + h;
         local intW = display.contentWidth
         local intH = display.contentHeight
         local midW = display.contentCenterX
@@ -171,24 +169,19 @@ function Menu:new()
         self:insert(background)
         
         -- Lista de Cupones
-        scrollMenu = widget.newScrollView
-        {
-            left = 0,
-            top = 0,
-            width = 400,
-            height = intH + 5,
-            id = "scrollMenu",
-            horizontalScrollDisabled = true,
-            verticalScrollDisabled = false,
-            hideBackground = true
-        }
+        scrollMenu = display.newGroup()
         self:insert(scrollMenu)
         
         -- Add user data
-        if not (settings.fbId == '') then
-            userData(settings)
-        else
-            lastY = 108;
+        if not (settings.fbId == '') and (intH >= 720) then
+            if (intH - h) >= 760 then
+                userData(settings, h, true)
+                lastY = 160 + h;
+            else
+                userData(settings, h, false)
+                lastY = 120 + h;
+            end
+            
         end
         
         -- Opciones basicas del menu
@@ -218,7 +211,7 @@ function Menu:new()
             
             lastY = lastY + 70
             if z == 7 then
-                lastY = lastY + 15
+                lastY = lastY + 10
             elseif z == #opts then
                 local txt = display.newText( " ", 100, lastY + 100, "Chivo", 12)
                 scrollMenu:insert( txt )
@@ -232,6 +225,11 @@ function Menu:new()
         maskToMove:setFillColor( 0 )
         maskToMove:addEventListener( "touch", doMoveM )
         self:insert(maskToMove)
+        
+        -- Scroll Vertical
+        maxY = (groups[#groups].y + 100)
+        isY = maxY > intH
+        difY = maxY - intH
         
         -- Border Right
         local borderRight = display.newRect( 398, midH, 4, intH )

@@ -7,6 +7,16 @@ local RestManager = {}
     local DBManager = require('src.resources.DBManager')
     local Globals = require('src.resources.Globals')
 
+    function urlencode(str)
+          if (str) then
+              str = string.gsub (str, "\n", "\r\n")
+              str = string.gsub (str, "([^%w ])",
+              function ( c ) return string.format ("%%%02X", string.byte( c )) end)
+              str = string.gsub (str, " ", "%%20")
+          end
+          return str    
+    end
+
 	--Open rackem.db.  If the file doesn't exist it will be created
 	RestManager.getCoupons = function()
         local settings = DBManager.getSettings()
@@ -91,12 +101,10 @@ local RestManager = {}
         password = crypto.digest(crypto.md5, password)
         local url = settings.url
         url = url.."api/createUser/format/json"
-        url = url.."/email/"..email
+        url = url.."/email/"..urlencode(email)
         url = url.."/password/"..password
-        url = url.."/name/"..name
+        url = url.."/name/"..urlencode(name)
         url = url.."/fbId/"..fbId
-        url = string.gsub(url, "%@", "%%40")
-        url = string.gsub(url, " ", "%%20")
         
         local function callback(event)
             if ( event.isError ) then
@@ -123,9 +131,8 @@ local RestManager = {}
         local url = settings.url
         url = url.."api/validateUser/format/json"
         url = url.."/idApp/"..settings.idApp
-        url = url.."/email/"..email
+        url = url.."/email/"..urlencode(email)
         url = url.."/password/"..password
-        url = string.gsub(url, "%@", "%%40")
     
         local function callback(event)
             if ( event.isError ) then
@@ -153,7 +160,7 @@ local RestManager = {}
         url = url.."/couponId/"..id
         url = url.."/typeId/"..typeId
         url = url.."/status/"..status
-        print(url)
+        
         local function callback(event)
             return true
         end
