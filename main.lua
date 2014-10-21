@@ -5,7 +5,7 @@
 ---------------------------------------------------------------------------------
 
 os.execute('cls')
-display.setStatusBar( display.DarkStatusBar )
+display.setStatusBar( display.TranslucentStatusBar )
 -- Requeridos
 local DBManager = require('src.resources.DBManager')
 storyboard = require "storyboard"
