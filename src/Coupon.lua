@@ -36,6 +36,10 @@ local screen, group, txtTitle, initX, initCompX, hC
 -- LISTENERS
 ---------------------------------------------------------------------------------
 function gotoMain(event)
+    if not (mapG == nil) then
+        mapG:removeSelf()
+        mapG = nil
+    end
     storyboard.gotoScene( "src.Home", {
         time = 400,
         effect = "crossFade"
@@ -48,12 +52,13 @@ function tapPageMap(event)
         t:setFillColor( 0 )
         local t = event.target
         mapG = display.newGroup()
+        --page[t.index]:insert( mapG )
         local bgShape = display.newRect( midW, intH + 138, intW, 286 )
         bgShape:setFillColor( 0 )
         mapG:insert( bgShape )
         local imgMin = display.newImage("img/btn/btnMinMap.png")
         imgMin.index = t.index
-        imgMin.x, imgMin.y = intW - 30, intH - 20
+        imgMin.x, imgMin.y = intW - 40, intH - 24
         imgMin:addEventListener( "tap", tapPageMap )
         mapG:insert( imgMin )
         
@@ -63,8 +68,6 @@ function tapPageMap(event)
                 local mapC = native.newMapView( midW, intH + 140, 480, 280 )
                 mapC:setCenter( t.latitude, t.longitude, 0.01, 0.01 )
                 mapG:insert(mapC)
-                -- Agregar marcador
-                mapC:addMarker( t.latitude, t.longitude, { title = t.partnerName, listener = markerListener} )
             end
         })
     else
@@ -429,8 +432,8 @@ function buildAdondeir(item, i)
     btnMap[i].index = i
     btnMap[i]:setFillColor( 0 )
     btnMap[i].partnerName = item.partnerName
-    btnMap[i].latitude = item.latitude
-    btnMap[i].longitude = item.longitude
+    btnMap[i].latitude = tonumber(item.latitude)
+    btnMap[i].longitude = tonumber(item.longitude)
     btnMap[i]:addEventListener( "tap", tapPageMap )
     scroll[i]:insert( btnMap[i] )
     local mapIcon = display.newImage("img/btn/detailMap.png")
@@ -603,8 +606,8 @@ function buildEvent(item, i)
     btnMap[i].index = i
     btnMap[i]:setFillColor( 0 )
     btnMap[i].partnerName = item.partnerName
-    btnMap[i].latitude = item.latitude
-    btnMap[i].longitude = item.longitude
+    btnMap[i].latitude = tonumber(item.latitude)
+    btnMap[i].longitude = tonumber(item.longitude)
     btnMap[i]:addEventListener( "tap", tapPageMap )
     scroll[i]:insert( btnMap[i] )
     local mapIcon = display.newImage("img/btn/detailMap.png")
@@ -719,8 +722,8 @@ function buildCoupon(item, i)
     btnMap[i].index = i
     btnMap[i]:setFillColor( 0 )
     btnMap[i].partnerName = item.partnerName
-    btnMap[i].latitude = item.latitude
-    btnMap[i].longitude = item.longitude
+    btnMap[i].latitude = tonumber(item.latitude)
+    btnMap[i].longitude = tonumber(item.longitude)
     btnMap[i]:addEventListener( "tap", tapPageMap )
     scroll[i]:insert( btnMap[i] )
     local mapIcon = display.newImage("img/btn/detailMap.png")

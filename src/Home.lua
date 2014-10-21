@@ -213,11 +213,11 @@ function emptyFav()
     loadingGrp.alpha = 0
     
     coupons[2] = display.newText( scrollView, "¡Oh!", 12, 0, "Chivo", 30 )
-    coupons[2].y = - 230
+    coupons[2].y = - 200
     coupons[2]:setFillColor( .3 )
     
     coupons[3] = display.newText( scrollView, "Aún no tienes Deals marcados como favoritos.", 12, 0, "Chivo", 20 )
-    coupons[3].y = - 190
+    coupons[3].y = - 160
     coupons[3]:setFillColor( .15 )
     
     coupons[4] = display.newText( scrollView, "Puedes marcar tu Deal como Favorito", 12, 0, "Chivo", 20 )
@@ -229,6 +229,26 @@ function emptyFav()
     coupons[5]:setFillColor( .3 )
 end
 
+function emptyPage()
+    coupons[1] = display.newImage( scrollView, "img/btn/errorOmg.png", true) 
+    loadingGrp.alpha = 0
+    
+    coupons[2] = display.newText( scrollView, "¡Oh!", 12, 0, "Chivo", 30 )
+    coupons[2].y = - 200
+    coupons[2]:setFillColor( .3 )
+    
+    coupons[3] = display.newText( scrollView, "De momento esta sección esta vacia.", 12, 0, "Chivo", 20 )
+    coupons[3].y = - 160
+    coupons[3]:setFillColor( .15 )
+    
+    coupons[4] = display.newText( scrollView, "No te preocupes, seguramente en algunas horas", 12, 0, "Chivo", 20 )
+    coupons[4].y = 140
+    coupons[4]:setFillColor( .3 )
+    
+    coupons[5] = display.newText( scrollView, "tendrá información y promociones ;)", 12, 0, "Chivo", 20 )
+    coupons[5].y = 165
+    coupons[5]:setFillColor( .3 )
+end
 
 function notConnection()
     title.text = ''
@@ -404,13 +424,15 @@ end
 
 function loadDirectory()
     if  loadingGrp.alpha == 0 then
+        noCallback = noCallback + 1
+        Globals.callbackDirectory = noCallback
         cleanHome()
     end
     
     if #Globals.Directory == 0 then
         -- Load info from cloud
         RestManager.getDirectory()
-    else
+    elseif Globals.callbackDirectory == noCallback then
         -- Cargar menu
         Globals.SubMenu = Globals.DirectoryType
         loadSubmenu()

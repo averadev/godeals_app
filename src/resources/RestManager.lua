@@ -59,7 +59,11 @@ local RestManager = {}
                 else
                     local data = json.decode(event.response)
                     if data.success then
-                        loadImages(data.items)
+                        if #data.items == 0 then
+                            emptyPage()
+                        else
+                            loadImages(data.items)
+                        end
                     else
                         native.showAlert( "Go Deals", data.message, { "OK"})
                     end

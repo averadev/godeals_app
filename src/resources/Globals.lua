@@ -15,6 +15,8 @@ return {
     
     SubMenu = {},
     
+    callbackDirectory = 0,
+    
     promoCat = 0,
     
     
