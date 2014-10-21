@@ -20,6 +20,7 @@ local intH = display.contentHeight
 local midW = display.contentCenterX
 local midH = display.contentCenterY
 local screenMap, group, sprRed, myMap
+local searchLocation = true
 
 ---------------------------------------------------------------------------------
 -- LISTENERS
@@ -52,28 +53,22 @@ function loadMapIcons(items)
     end
 end
 
--- Get Position by GPS or Wifi
-function getPosition(checks)
-    local currentLocation = myMap:getUserLocation()
-    native.showAlert( "Go Deals", "latitude: "..currentLocation.latitude, { "OK"})
-    native.showAlert( "Go Deals", "longitude: "..currentLocation.longitude, { "OK"})
-    if currentLocation.errorCode then
-        if checks < 15 then
-            checks = checks + 1
-            timer.performWithDelay( 5000, function()
-                getPosition(checks)
-            end, 1 )
-        else
-            sprRed:setSequence("no-red")
-        end
-    else
+local locationHandler = function( event )
+	-- Check for error (user may have turned off Location Services)
+	if event.errorCode then
+        sprRed:setSequence("no-red")
+		native.showAlert( "GPS Location Error", event.errorMessage, {"OK"} )
+		Runtime:removeEventListener( "location", locationHandler )
+	elseif searchLocation then
+        searchLocation = false
         sprRed:setSequence("si-red")
         -- Current location data was received.
-        currentLatitude = currentLocation.latitude
-        currentLongitude = currentLocation.longitude
-        myMap:setRegion( currentLatitude, currentLongitude, 0.01, 0.01, true )
-    end
+        myMap:setRegion( event.latitude, event.longitude, 0.01, 0.01, true )
+        Runtime:removeEventListener( "location", locationHandler )
+	end
 end
+
+
 ---------------------------------------------------------------------------------
 -- OVERRIDING SCENES METHODS
 ---------------------------------------------------------------------------------
@@ -140,7 +135,10 @@ function scene:enterScene( event )
     -- Get Position
     sprRed:setSequence("search")
     sprRed:play()
-    getPosition(1)
+    
+    -- Activate location listener
+    searchLocation = true
+    Runtime:addEventListener( "location", locationHandler )
 end
 
 -- Remove Listener
@@ -149,6 +147,7 @@ function scene:exitScene( event )
         myMap:removeSelf()
         myMap = nil
     end
+    Runtime:removeEventListener( "location", locationHandler )
 end
 
 scene:addEventListener("createScene", scene )
