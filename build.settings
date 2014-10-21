@@ -1,6 +1,7 @@
 settings = {
 
 	orientation = {
+        supported = { "portrait" }
     },
 
     plugins = {
