@@ -55,6 +55,8 @@ end
 -- Get Position by GPS or Wifi
 function getPosition(checks)
     local currentLocation = myMap:getUserLocation()
+    native.showAlert( "Go Deals", "latitude: "..currentLocation.latitude, { "OK"})
+    native.showAlert( "Go Deals", "longitude: "..currentLocation.longitude, { "OK"})
     if currentLocation.errorCode then
         if checks < 15 then
             checks = checks + 1
