@@ -589,6 +589,9 @@ function addItemsPlace(items, textTitle, typeC, i, lastY, boolBg)
 end
 
 function buildEvent(item, i)
+    -- Group to move
+    local groupEvt = display.newGroup()
+    scroll[i]:insert( groupEvt )
     
     -- Agregamos imagen
     local imgShape = display.newRect( midW, 216, 444, 396 )
@@ -596,11 +599,12 @@ function buildEvent(item, i)
     scroll[i]:insert( imgShape )
     local imgShape2 = display.newRect(  midW, 383, 444, 62  )
     imgShape2:setFillColor( 0, .7, 0 )
-    scroll[i]:insert( imgShape2 )
+    groupEvt:insert( imgShape2 )
     local img = display.newImage(item.image, system.TemporaryDirectory)
     img.x, img.y = midW, 185
     img.width, img.height  = 440, 330
-    scroll[i]:insert( img )
+    groupEvt:insert( img )
+    
     -- Boton de Mapa
     btnMap[i] = display.newRect( midW - 110, 383, 220, 60 )
     btnMap[i].index = i
@@ -609,13 +613,13 @@ function buildEvent(item, i)
     btnMap[i].latitude = tonumber(item.latitude)
     btnMap[i].longitude = tonumber(item.longitude)
     btnMap[i]:addEventListener( "tap", tapPageMap )
-    scroll[i]:insert( btnMap[i] )
+    groupEvt:insert( btnMap[i] )
     local mapIcon = display.newImage("img/btn/detailMap.png")
     mapIcon.x, mapIcon.y = 50, 382
-    scroll[i]:insert( mapIcon )
+    groupEvt:insert( mapIcon )
     local mapTxt = display.newText( "Mostrar Mapa", midW - 100, 382, "Chivo", 20)
     mapTxt:setFillColor( 1 )
-    scroll[i]:insert( mapTxt )
+    groupEvt:insert( mapTxt )
     -- Boton de Fav
     local shapeR = display.newRect( midW + 110, 383, 218, 60 )
     shapeR.index = i
@@ -624,14 +628,14 @@ function buildEvent(item, i)
     shapeR.isMark = false
     shapeR:setFillColor( 0 )
     shapeR:addEventListener( "tap", tapPageFav )
-    scroll[i]:insert( shapeR )
+    groupEvt:insert( shapeR )
     local sheet = graphics.newImageSheet(Sprites.fav.source, Sprites.fav.frames)
     iconFav[i] = display.newSprite(sheet, Sprites.fav.sequences)
     iconFav[i].x, iconFav[i].y = midW + 32, 382
-    scroll[i]:insert( iconFav[i] )
+    groupEvt:insert( iconFav[i] )
     local favTxt = display.newText( "Favoritos", midW + 110, 382, "Chivo", 20)
     favTxt:setFillColor( 1 )
-    scroll[i]:insert( favTxt )
+    groupEvt:insert( favTxt )
     
     -- Is fav
     if not(item.isFav == 0 or item.isFav == '0') then 
@@ -642,39 +646,39 @@ function buildEvent(item, i)
     -- Place Detail
     local dImg1 = display.newImage("img/btn/detailPlace.png")
     dImg1.x, dImg1.y = 60, 460
-    scroll[i]:insert( dImg1 )
+    groupEvt:insert( dImg1 )
     local dTxt1 = display.newText( (item.subtitle1..", "..item.subtitle2), 270, 460, 360, 24,  "Chivo", 18)
     dTxt1:setFillColor( 0 )
-    scroll[i]:insert( dTxt1 )
+    groupEvt:insert( dTxt1 )
     local dotted1 = display.newImage("img/btn/dottedLine.png")
     dotted1.x, dotted1.y = midW, 490
-    scroll[i]:insert( dotted1 )
+    groupEvt:insert( dotted1 )
     -- Date Detail
     local dImg3 = display.newImage("img/btn/detailVigencia.png")
     dImg3.x, dImg3.y = 60, 530
-    scroll[i]:insert( dImg3 )
+    groupEvt:insert( dImg3 )
     local dImg3 = display.newText( item.dateMax, 270, 530, 360, 24,  "Chivo", 18)
     dImg3:setFillColor( 0 )
-    scroll[i]:insert( dImg3 )
+    groupEvt:insert( dImg3 )
     -- Time Detail
     local dImg3 = display.newImage("img/btn/detailHora.png")
     dImg3.x, dImg3.y = 290, 530
-    scroll[i]:insert( dImg3 )
+    groupEvt:insert( dImg3 )
     local dImg3 = display.newText( item.time, 400, 530, 150, 24,  "Chivo", 18)
     dImg3:setFillColor( 0 )
-    scroll[i]:insert( dImg3 )
+    groupEvt:insert( dImg3 )
     -- Line Dotted
     local dotted2 = display.newImage("img/btn/dottedLine.png")
     dotted2.x, dotted2.y = midW, 570
-    scroll[i]:insert( dotted2 )
+    groupEvt:insert( dotted2 )
     
     -- Descripcion
     local descTitle = display.newText( "Detalle del evento:", 190, 610, 330, 28, "Chivo", 20)
     descTitle:setFillColor( 0, .4, 0 )
-    scroll[i]:insert( descTitle )
+    groupEvt:insert( descTitle )
     local descTxt = display.newText( item.info, 240, 690, 430, 0,  "Chivo", 16)
     descTxt:setFillColor( 0 )
-    scroll[i]:insert( descTxt )
+    groupEvt:insert( descTxt )
     local lastY = 580 + (descTxt.contentHeight / 2) + 50
     descTxt.y = lastY
     lastY = lastY + (descTxt.contentHeight / 2) + 20
@@ -682,7 +686,7 @@ function buildEvent(item, i)
     -- Publicidad
     local publiShape = display.newRect( midW, lastY + 65, 480, 130 )
     publiShape:setFillColor( .95 )
-    scroll[i]:insert( publiShape )
+    groupEvt:insert( publiShape )
     -- Determine if publicity exists
     local pathP = system.pathForFile( item.publicidad, system.TemporaryDirectory )
     local fhdP = io.open( pathP )
@@ -690,7 +694,7 @@ function buildEvent(item, i)
         fhdP:close()
         local publicidad = display.newImage(item.publicidad, system.TemporaryDirectory )
         publicidad.x, publicidad.y = midW, lastY + 55
-        scroll[i]:insert( publicidad )
+        groupEvt:insert( publicidad )
     else
         -- Get from cloud
         display.loadRemoteImage( settings.url .. 'assets/img/app/publicity/movil/' .. item.publicidad, "GET", 
@@ -698,10 +702,45 @@ function buildEvent(item, i)
                 if ( event.isError ) then
                 else
                     event.target.x, event.target.y = midW, lastY + 55
-                    scroll[i]:insert( event.target )
+                    groupEvt:insert( event.target )
                 end
         end, item.publicidad, system.TemporaryDirectory )
     end
+    
+    
+    -- Reload Main Image
+    local pathP = system.pathForFile( "max"..item.image, system.TemporaryDirectory )
+    local fhdP = io.open( pathP )
+    if fhdP then
+        fhdP:close()
+        local img2 = display.newImage("max"..item.image, system.TemporaryDirectory )
+        img2.x = midW
+        img2.y = (img2.height / 2) + 20
+        scroll[i]:insert( img2 )
+        -- Move Group
+        img:removeSelf()
+        img = nil
+        imgShape.y = img2.y
+        imgShape.height = img2.height + 4
+        groupEvt.y = img2.height - 330
+    else
+        -- Get from cloud
+        display.loadRemoteImage( settings.url .. 'assets/img/app/event/fullapp/' .. item.image, "GET", 
+            function ( event )
+                if ( event.isError ) then
+                else
+                    event.target.x, event.target.y = midW, (event.target.height / 2) + 20
+                    scroll[i]:insert( event.target )
+                    -- Move Group
+                    img:removeSelf()
+                    img = nil
+                    imgShape.y = event.target.y
+                    imgShape.height = event.target.height + 4
+                    groupEvt.y = event.target.height - 330
+                end
+        end, "max"..item.image, system.TemporaryDirectory )
+    end
+    
 end
 
 function buildCoupon(item, i)
@@ -717,6 +756,7 @@ function buildCoupon(item, i)
     img.x, img.y = midW, 185
     img.width, img.height  = 440, 330
     scroll[i]:insert( img )
+    
     -- Boton de Mapa
     btnMap[i] = display.newRect( midW - 110, 383, 220, 60 )
     btnMap[i].index = i
