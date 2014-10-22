@@ -68,6 +68,8 @@ function tapPageMap(event)
                 local mapC = native.newMapView( midW, intH + 140, 480, 280 )
                 mapC:setCenter( t.latitude, t.longitude, 0.01, 0.01 )
                 mapG:insert(mapC)
+                -- Add Maker
+                mapC:addMarker( t.latitude, t.longitude)
             end
         })
     else
