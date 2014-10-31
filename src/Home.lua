@@ -962,7 +962,18 @@ end
 
 -- Remove Listener
 function scene:exitScene( event )
+    Runtime:removeEventListener( "key", onKeyEvent )
 end
+
+local function onKeyEvent( event )
+    local phase = event.phase
+    local keyName = event.keyName
+    if ( "back" == keyName and phase == "up" ) then
+        showMenu()
+        return true
+    end
+end
+Runtime:addEventListener( "key", onKeyEvent )
 
 scene:addEventListener("createScene", scene )
 scene:addEventListener("enterScene", scene )

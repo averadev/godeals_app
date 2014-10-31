@@ -71,7 +71,7 @@ local dbManager = {}
 		end
         
         -- Populate config
-        query = "INSERT INTO config VALUES (1, 0, '', '', '', '', 'http://4beta.godeals.mx/');"
+        query = "INSERT INTO config VALUES (1, 0, '', '', '', '', 'http://godeals.mx/');"
         
 		db:exec( query )
     

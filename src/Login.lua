@@ -393,6 +393,10 @@ scene:addEventListener("createScene", scene )
 scene:addEventListener("enterScene", scene )
 scene:addEventListener("exitScene", scene )
 
+function scene:exitScene( event )
+    Runtime:removeEventListener( "key", onKeyEvent )
+end
+
 -- Return button Android Devices
 local function onKeyEvent( event )
     local phase = event.phase
