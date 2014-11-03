@@ -5,7 +5,12 @@
 ---------------------------------------------------------------------------------
 
 os.execute('cls')
-display.setStatusBar( display.TranslucentStatusBar )
+if display.topStatusBarContentHeight > 15 then
+    display.setStatusBar( display.TranslucentStatusBar )
+else
+    display.setStatusBar( display.HiddenStatusBar )
+end
+
 -- Requeridos
 local DBManager = require('src.resources.DBManager')
 storyboard = require "storyboard"

@@ -39,7 +39,7 @@ settings = {
             "Icon-Small@2x.png"
             },
             
-            CFBundleShortVersionString = "1.0",
+            CFBundleShortVersionString = "1.7",
             
 
             UIApplicationExitsOnSuspend = false,
