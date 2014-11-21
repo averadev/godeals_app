@@ -40,6 +40,33 @@ local RestManager = {}
         network.request( url, "GET", callback ) 
 	end
 
+    RestManager.getByDate = function(add)
+        if networkConnection(true) then
+            local settings = DBManager.getSettings()
+            -- Set url
+            local url = settings.url
+            url = url.."api/getByDate/format/json"
+            url = url.."/idApp/"..settings.idApp
+            url = url.."/next/"..add
+            
+            local function callback(event)
+                if ( event.isError ) then
+                else
+                    local data = json.decode(event.response)
+                    if #data.items == 0 then
+                        -- emptyFav()
+                    else
+                        loadTxtBanner(data.dateFormat)
+                        loadImages(data.items)
+                    end
+                end
+                return true
+            end
+            -- Do request
+            network.request( url, "GET", callback )  
+        end
+	end
+
 	RestManager.getItems = function(type, subtype)
         if networkConnection(true) then
             local settings = DBManager.getSettings()
@@ -51,7 +78,6 @@ local RestManager = {}
             if not (subtype == nil) then
                 url = url.."/subtype/"..subtype
             end
-            print(url)
 
             local function callback(event)
                 if ( event.isError ) then
@@ -188,6 +214,59 @@ local RestManager = {}
                     if #data.items == 0 then
                         emptyFav()
                     else
+                        loadImages(data.items)
+                    end
+                end
+                return true
+            end
+            -- Do request
+            network.request( url, "GET", callback )  
+        end
+	end
+
+    RestManager.getComer = function()
+        if networkConnection(true) then
+            local settings = DBManager.getSettings()
+            -- Set url
+            local url = settings.url
+            url = url.."api/getComer/format/json"
+            url = url.."/idApp/"..settings.idApp
+
+            local function callback(event)
+                if ( event.isError ) then
+                else
+                    local data = json.decode(event.response)
+                    if #data.items == 0 then
+                        emptyFav()
+                    else
+                        loadImages(data.items)
+                    end
+                end
+                return true
+            end
+            -- Do request
+            network.request( url, "GET", callback )  
+        end
+	end
+
+    RestManager.getComercio = function(idComer)
+        if networkConnection(true) then
+            local settings = DBManager.getSettings()
+            -- Set url
+            local url = settings.url
+            url = url.."api/getComercio/format/json"
+            url = url.."/idApp/"..settings.idApp
+            url = url.."/idComer/"..idComer
+
+            local function callback(event)
+                if ( event.isError ) then
+                else
+                    local data = json.decode(event.response)
+                    -- Print header
+                    loadComerio(data.comercio)
+                    -- Print items
+                    Globals.Directory = data.items
+                    if  #data.items > 0 then
                         loadImages(data.items)
                     end
                 end

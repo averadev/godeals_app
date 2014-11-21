@@ -21,8 +21,8 @@ local menuScreen = Menu:new()
 local homeScreen = display.newGroup()
 
 -- Objects
-local scrollView, menuGrp, subMenuGrp, settings, mask 
-local btnMenu, loading, title, loadingGrp, bgFloatMenu
+local scrollView, menuGrp, menuRGrp, subMenuGrp, navGrp, settings, titleLoading, mask 
+local btnMenu, loading, title, loadingGrp, bgFloatMenu, titleNav, navArrowL, filter
 local svHeightY = {}
 local coupons = {}
 local imageItems = {}
@@ -31,6 +31,8 @@ local submenuTxt = {}
 local submenuline = {}
 local submenuRest = {}
 local bgSubMenu = {}
+local bgSubMenuR = {}
+local banners = {}
 local noPackage = 1
 local fxTap = audio.loadSound( "fx/click.wav")
 
@@ -39,9 +41,12 @@ local intW = display.contentWidth
 local intH = display.contentHeight
 local midW = display.contentCenterX
 local midH = display.contentCenterY
+local h = display.topStatusBarContentHeight
 local lastY = 0;
 local noMax, noCou = 1, 1
 local noCallback = 0
+local currentPage = 0
+local currentAgenda = 0
 local isHome = true
 local isBreak = false
 
@@ -50,7 +55,7 @@ local isBreak = false
 -- LISTENERS
 ---------------------------------------------------------------------------------
 function showMenu(event)
-    if isHome and subMenuGrp.alpha == 0 then
+    if isHome and mask.alpha == 0 then
         isHome = false
         transition.to( homeScreen, { x = homeScreen.x + 400, time = 400, transition = easing.outExpo } )
         transition.to( menuScreen, { x = menuScreen.x + 400, time = 400, transition = easing.outExpo } )
@@ -70,14 +75,37 @@ function hideMenu(event)
         end, 1 )
     end
     hideMenuFilter()
+    hideMenuRFilter()
 end
 
 function moveHome(xPosH)
     homeScreen.x = xPosH
 end
 
+function agendaR(event)
+    if isHome and mask.alpha == 0 then
+        cleanHome()
+        audio.play(fxTap)
+        noCallback = noCallback + 1
+        navArrowL.alpha = 1
+        currentAgenda = currentAgenda + 1
+        RestManager.getByDate(currentAgenda)
+    end
+end
+
+function agendaL(event)
+    if isHome and mask.alpha == 0 and navArrowL.alpha == 1 then
+        cleanHome()
+        audio.play(fxTap)
+        noCallback = noCallback + 1
+        currentAgenda = currentAgenda - 1
+        if currentAgenda == 0 then navArrowL.alpha = .3 end
+        RestManager.getByDate(currentAgenda)
+    end
+end
+
 function showCoupon(event)
-    if isHome and subMenuGrp.alpha == 0 then
+    if isHome and mask.alpha == 0 then
         storyboard.gotoScene( "src.Coupon", {
             time = 400,
             effect = "crossFade",
@@ -96,12 +124,39 @@ end
 
 function showFav(event)
     if isHome then
+        currentPage = 0
+        showAgendaBar(false)
+        menuScreen:clearSelMenu()
         cleanHome()
-        --hideSubmenu()
+        hideFilter()
         noCallback = noCallback + 1
         title.text = "Favoritos"
+        event.target.alpha = .5
         RestManager.getFav()
     end
+end
+
+function showComer(event)
+    if isHome then
+        currentPage = 0
+        showAgendaBar(false)
+        menuScreen:clearSelMenu()
+        cleanHome()
+        hideFilter()
+        noCallback = noCallback + 1
+        title.text = "Comercios"
+        event.target.alpha = .5
+        RestManager.getComer()
+    end
+end
+
+
+function loadComercio(idComer)
+    currentPage = 0
+    showAgendaBar(false)
+    cleanHome()
+    noCallback = noCallback + 1
+    RestManager.getComercio(idComer)
 end
 
 function showMap(event)
@@ -109,14 +164,30 @@ function showMap(event)
         storyboard.gotoScene( "src.Map", { time = 400, effect = "crossFade" })
     end
 end
+function showMenuR(event)
+    if menuRGrp.alpha == 0 then
+        transition.to( mask, { alpha = .5, time = 400, transition = easing.outQuad } )
+        transition.to( menuRGrp, { alpha = 1, time = 400, transition = easing.outQuad } )
+    else
+        hideMenuRFilter()
+    end
+end
+function hideMenuRFilter()
+    if menuRGrp.alpha == 1 then
+        transition.to( mask, { alpha = 0, time = 400, transition = easing.outQuad } )
+        transition.to( menuRGrp, { alpha = 0, time = 400, transition = easing.outQuad } )
+    end
+end
 
 function showMenuFilter(event)
-    if subMenuGrp.alpha == 0 then
-        if #coupons > 0 then if coupons[2].method == 'search' then coupons[2].x = -300 end end
-        transition.to( mask, { alpha = .5, time = 400, transition = easing.outQuad } )
-        transition.to( subMenuGrp, { alpha = 1, time = 400, transition = easing.outQuad } )
-    else
-        hideMenuFilter()
+    if filter.alpha == 1 then 
+        if subMenuGrp.alpha == 0 then
+            if #coupons > 0 then if coupons[2].method == 'search' then coupons[2].x = -300 end end
+            transition.to( mask, { alpha = .5, time = 400, transition = easing.outQuad } )
+            transition.to( subMenuGrp, { alpha = 1, time = 400, transition = easing.outQuad } )
+        else
+            hideMenuFilter()
+        end
     end
 end
 function hideMenuFilter()
@@ -129,7 +200,7 @@ end
 
 function searchDir(event)
     -- Cargar por tipo
-    if subMenuGrp.alpha == 0 then
+    if mask.alpha == 0 then
         Globals.CurrentRest = {}
         for z = 1, #bgSubMenu, 1 do bgSubMenu[z].alpha = .1 end
         bgSubMenu[1].alpha = .5
@@ -144,7 +215,7 @@ function searchDir(event)
     end
 end
 function searchCancel(event)
-    if subMenuGrp.alpha == 0 then
+    if mask.alpha == 0 then
         -- Hide button
         event.target.alpha = 0
         coupons[2].text = ''
@@ -165,6 +236,9 @@ function onTxtSearch(event)
     if ( "submitted" == event.phase ) then
         searchDir()
     end
+end
+
+function getMenuR(event)
 end
 
 ---------------------------------------------------------------------------------
@@ -200,12 +274,10 @@ local function reloadConn()
 end
 
 function showFilter()
-    menuGrp.x = -60
-    title.x = 250
+    filter.alpha = 1
 end
 function hideFilter()
-    menuGrp.x = 0
-    title.x = 230
+    filter.alpha = .5
 end
 
 function emptyFav()
@@ -378,7 +450,7 @@ end
 function loadSubmenu()
     clearSubMenu()
     bgFloatMenu.height = #Globals.SubMenu * 60
-    local h = display.topStatusBarContentHeight
+    
     for z = 1, #Globals.SubMenu, 1 do 
         submenu[z] = display.newGroup()
         subMenuGrp:insert(submenu[z])
@@ -424,9 +496,11 @@ end
 
 function loadDirectory()
     if  loadingGrp.alpha == 0 then
+        currentPage = 7
         noCallback = noCallback + 1
         Globals.callbackDirectory = noCallback
         cleanHome()
+        titleLoading.text = "Por favor espere..."
     end
     
     if #Globals.Directory == 0 then
@@ -506,15 +580,132 @@ end
 -- Obtenemos los datos de la web
 function loadBy(type)
     cleanHome()
-    --hideSubmenu()
+    titleLoading.text = "Por favor espere..."
+    currentPage = type
     Globals.promoCat = type
     noCallback = noCallback + 1
-    RestManager.getItems(type)
+    if type == 1 then
+        showAgendaBar(true)
+        RestManager.getByDate(currentAgenda)
+    else
+        showAgendaBar(false)
+        RestManager.getItems(type)
+    end
 end
+
+function showAgendaBar(bool)
+    if bool then
+        navGrp.alpha = 1
+        navArrowL.alpha = .3
+        currentAgenda = 0
+        scrollView.height = intH - (123 + h)
+        scrollView.y = (midH + ((125 + h)/2))
+    else
+        navGrp.alpha = 0
+        scrollView.height = intH - (63 + h)
+        scrollView.y = (midH + ((65 + h)/2))
+    end
+    
+end
+
+-- Cargar Info comercio
+function loadComerio(comercio)
+    
+    -- Stop Loading
+    loadingGrp.alpha = 0
+    loading:setSequence("stop")
+    
+    -- Generamos contenedor
+    local lastB = 1
+    banners[lastB] = display.newContainer( 444, 284 )
+    banners[lastB].index = lastB
+    banners[lastB].x = midW
+    banners[lastB].y = lastY + 165
+    scrollView:insert( banners[lastB] )
+    
+    -- Agregamos rectangulo base
+    local maxShape = display.newRect( 0, 0, 444, 284 )
+    maxShape:setFillColor( 1, 1, 1, .7 )
+    banners[lastB]:insert( maxShape )
+    
+    -- Agregamos rectangulo alfa al pie
+    local maxBottom = display.newRect( 0, -100, 440, 80 )
+    maxBottom:setFillColor( 0, 0, 0, .7 )
+    banners[lastB]:insert( maxBottom )
+    
+    local txtTitle = display.newText( comercio.name, 20, -100, 440, 46,  "Chivo", 25)
+    txtTitle:setFillColor( .4, .81, 0 )
+    banners[lastB]:insert(txtTitle)
+    local txtSubtitle1 = display.newText( comercio.categoryName, 20, -65, 435, 60, "Chivo", 18)
+    txtSubtitle1:setFillColor( 1, 1, 1 )
+    banners[lastB]:insert(txtSubtitle1)
+    
+    local txtInfo = display.newText( comercio.info, 100, 40, 200, 180, "Chivo", 16)
+    txtInfo:setFillColor( 0 )
+    banners[lastB]:insert(txtInfo)
+    
+    -- Get Logo
+    local path = system.pathForFile( comercio.image, system.TemporaryDirectory )
+    local fhd = io.open( path )
+    if fhd then
+        fhd:close()
+        local logo = display.newImage(banners[lastB], comercio.image, system.TemporaryDirectory )
+        logo.x = -120
+        logo.y = 40
+        logo.width = 200
+        logo.height  = 200
+    else
+        local function networkListenerComer( event )
+            if ( event.isError ) then
+            else
+                event.target.x = -120
+                event.target.y = 40
+                event.target.width = 200
+                event.target.height  = 200
+                banners[lastB]:insert( event.target )
+            end
+        end
+
+        display.loadRemoteImage( 
+        settings.url..'assets/img/app/logo/'..comercio.image, 
+        "GET", networkListenerComer, comercio.image, system.TemporaryDirectory ) 
+    end
+    
+    -- Guardamos la ultima posicion
+    lastY = lastY + 250
+    
+    -- Generamos contenedor phone y direccion
+    lastB = 2
+    banners[lastB] = display.newContainer( 444, 150 )
+    banners[lastB].index = lastB
+    banners[lastB].x = midW
+    banners[lastB].y = lastY + 165
+    scrollView:insert( banners[lastB] )
+    
+    local iconPhone = display.newImage(banners[lastB], "img/btn/iconComer2.png", true) 
+	iconPhone.x = -180
+	iconPhone.y = -50
+    local txtPhone = display.newText( comercio.phone, 40, -35, 350, 45, "Chivo", 20)
+    txtPhone:setFillColor( 0 )
+    banners[lastB]:insert(txtPhone)
+    
+    local iconPlace = display.newImage(banners[lastB], "img/btn/iconComer1.png", true) 
+	iconPlace.x = -180
+	iconPlace.y = 20
+    local txtPlace = display.newText( comercio.address, 40, 25, 350, 60, "Chivo", 17)
+    txtPlace:setFillColor( 0 )
+    banners[lastB]:insert(txtPlace)
+    
+    -- Guardamos la ultima posicion
+    lastY = lastY + 220
+    
+end
+    
 
 -- Cargamos imagenes
 function loadImages(items)
     Globals.Items = items
+    titleLoading.text = "Descargando imagenes..."
     for y = 1, #Globals.Items, 1 do 
         Globals.Items[y].callback = noCallback
     end
@@ -522,51 +713,55 @@ function loadImages(items)
 end
 function loadImage(posc)
     -- Listener loading
-    local function networkListener( event )
-        -- Verificamos el callback activo
-        if #Globals.Items <  posc then 
-            if not ( event.isError ) then
+    if not (Globals.Items[posc].image == nil) then
+        local function networkListener( event )
+            -- Verificamos el callback activo
+            if #Globals.Items <  posc then 
+                if not ( event.isError ) then
+                    destroyImage(event.target)
+                end
+            elseif Globals.Items[posc].callback == noCallback then
+                if ( event.isError ) then
+                    native.showAlert( "Go Deals", "Network error :(", { "OK"})
+                else
+                    event.target.alpha = 0
+                    imageItems[posc] = event.target
+                    if posc < #Globals.Items and posc <= (noPackage * 10) then
+                        loadImage(posc + 1)
+                    else
+                        buildItems()
+                    end
+                end
+            elseif not ( event.isError ) then
                 destroyImage(event.target)
             end
-        elseif Globals.Items[posc].callback == noCallback then
-            if ( event.isError ) then
-                native.showAlert( "Go Deals", "Network error :(", { "OK"})
-            else
-                event.target.alpha = 0
-                imageItems[posc] = event.target
+        end
+        -- Do call image
+
+        Globals.Items[posc].idCupon = Globals.Items[posc].id
+        Globals.Items[posc].id = posc
+        local path = system.pathForFile( Globals.Items[posc].image, system.TemporaryDirectory )
+        local fhd = io.open( path )
+        -- Determine if file exists
+        if fhd then
+            fhd:close()
+            imageItems[posc] = display.newImage( Globals.Items[posc].image, system.TemporaryDirectory )
+            if Globals.Items[posc].callback == noCallback then
+                imageItems[posc].alpha = 0
                 if posc < #Globals.Items and posc <= (noPackage * 10) then
                     loadImage(posc + 1)
                 else
                     buildItems()
                 end
-            end
-        elseif not ( event.isError ) then
-            destroyImage(event.target)
-        end
-    end
-    -- Do call image
-    
-    Globals.Items[posc].idCupon = Globals.Items[posc].id
-    Globals.Items[posc].id = posc
-    local path = system.pathForFile( Globals.Items[posc].image, system.TemporaryDirectory )
-    local fhd = io.open( path )
-    -- Determine if file exists
-    if fhd then
-        fhd:close()
-        imageItems[posc] = display.newImage( Globals.Items[posc].image, system.TemporaryDirectory )
-        if Globals.Items[posc].callback == noCallback then
-            imageItems[posc].alpha = 0
-            if posc < #Globals.Items and posc <= (noPackage * 10) then
-                loadImage(posc + 1)
             else
-                buildItems()
+                destroyImage(imageItems[posc])
             end
         else
-            destroyImage(imageItems[posc])
+           display.loadRemoteImage( settings.url..'assets/img/app/'..Globals.Items[posc].path..Globals.Items[posc].image, 
+            "GET", networkListener, Globals.Items[posc].image, system.TemporaryDirectory ) 
         end
     else
-       display.loadRemoteImage( settings.url..'assets/img/app/'..Globals.Items[posc].path..Globals.Items[posc].image, 
-        "GET", networkListener, Globals.Items[posc].image, system.TemporaryDirectory ) 
+        loadImage(posc + 1)
     end
 end
 
@@ -589,7 +784,27 @@ function buildItems()
     -- Build items
     local z = (noPackage * 10) - 9
     while z <= #Globals.Items and z <= (noPackage * 10) do 
-        if Globals.Items[z].fav == 1 or Globals.Items[z].fav == "1" then
+        -- Armar titulos
+        if currentPage == 1 then
+            local typeBanner = ''
+            if z == 1 then
+                if Globals.Items[z].type == 2 then typeBanner = 'Eventos' 
+                elseif Globals.Items[z].type == 6 then typeBanner = 'Sport TV' 
+                elseif Globals.Items[z].type == 3 then typeBanner = 'Promociones y Descuentos' end
+            else
+                if not (Globals.Items[z].type == Globals.Items[z - 1].type) then
+                    if Globals.Items[z].type == 2 then typeBanner = 'Eventos' 
+                    elseif Globals.Items[z].type == 6 then typeBanner = 'Sport TV' 
+                    elseif Globals.Items[z].type == 3 then typeBanner = 'Promociones y Descuentos' end
+                end
+            end
+            if not (typeBanner == '') then setBanner(typeBanner) end
+        end
+        
+        -- Armar cupones
+        if Globals.Items[z].fav == 2 or Globals.Items[z].fav == "2" then
+            setComerCoupon(Globals.Items[z]) 
+        elseif Globals.Items[z].fav == 1 or Globals.Items[z].fav == "1" then
             setMaxCoupon(Globals.Items[z]) 
         else
             setStdCoupon(Globals.Items[z]) 
@@ -632,9 +847,18 @@ end
 function cleanHome()
     -- Limpiar Scroll
     noPackage = 1
+    for z = 1, #bgSubMenuR, 1 do 
+        bgSubMenuR[z].alpha = .1
+    end
     for z = 1, #imageItems, 1 do 
         imageItems[z]:removeSelf()
         imageItems[z] = nil
+    end
+    for z = 1, #banners, 1 do 
+        if not(banners[z] == nil) then
+            banners[z]:removeSelf()
+            banners[z] = nil
+        end
     end
     for z = 1, #coupons, 1 do 
         if not(coupons[z] == nil) then
@@ -645,6 +869,7 @@ function cleanHome()
     end
     lastY = 0;
     coupons = {}
+    banners = {}
     -- Play loading
     loadingGrp.alpha = 1
     loading:setSequence("play")
@@ -653,6 +878,96 @@ function cleanHome()
     scrollView:scrollToPosition( { y = 0 } )
     -- Quitar escena de cupones
     storyboard.removeScene( "src.Coupon" )
+end
+
+function loadTxtBanner(dateFormat)
+    titleNav.text = dateFormat
+end
+
+function setBanner(typeBanner)
+    -- Bg
+    local lastC = #banners + 1
+    
+    -- Generamos contenedor
+    banners[lastC] = display.newContainer( 480, 80 )
+    banners[lastC].index = lastC
+    banners[lastC].x = midW
+    banners[lastC].y = lastY + 40
+    scrollView:insert( banners[lastC] )
+    
+    
+    
+    
+    local bgBanner = display.newImage("img/btn/bgBanner.png", true) 
+	bgBanner.x = 0
+	bgBanner.y = 20
+    banners[lastC]:insert( bgBanner )
+    
+    -- Texto
+    local txtTitle = display.newText( typeBanner, 0, 15, "Chivo", 20)
+    txtTitle:setFillColor( 0 )
+    banners[lastC]:insert( txtTitle )
+    
+    lastY = lastY + 70
+end
+
+function showComercio(event)
+    loadComercio(event.target.idComer)
+end
+    
+-- Genera una plantillla de comercio
+function setComerCoupon(obj)
+    -- Obtiene el total de cupones de la tabla y agrega uno
+    local lastC = #coupons + 1
+    
+    -- Add Space
+    if #coupons > 0 then
+        lastY = lastY + 25
+    else
+        lastY = lastY + 5
+    end
+    
+    -- Generamos contenedor
+    coupons[lastC] = display.newContainer( 444, 284 )
+    coupons[lastC].index = lastC
+    coupons[lastC].x = midW
+    coupons[lastC].idComer = obj.idComer
+    coupons[lastC].y = lastY + 165
+    scrollView:insert( coupons[lastC] )
+    coupons[lastC]:addEventListener( "tap", showComercio )
+    
+    -- Agregamos rectangulo base
+    local maxShape = display.newRect( 0, 0, 444, 284 )
+    maxShape:setFillColor( 1, 1, 1, .7 )
+    coupons[lastC]:insert( maxShape )
+    
+    -- Agregamos imagen
+    imageItems[obj.id].alpha = 1
+    imageItems[obj.id].x = -120
+    imageItems[obj.id].y = 40
+    imageItems[obj.id].width = 200
+    imageItems[obj.id].height  = 200
+    coupons[lastC]:insert( imageItems[obj.id] )
+    
+    -- Agregamos rectangulo alfa al pie
+    local maxBottom = display.newRect( 0, -100, 440, 80 )
+    maxBottom:setFillColor( 0, 0, 0, .7 )
+    coupons[lastC]:insert( maxBottom )
+    
+    local txtTitle = display.newText( obj.name, 20, -100, 440, 46,  "Chivo", 25)
+    txtTitle:setFillColor( .4, .81, 0 )
+    coupons[lastC]:insert(txtTitle)
+    local txtSubtitle1 = display.newText( obj.categoryName, 20, -65, 435, 60, "Chivo", 18)
+    txtSubtitle1:setFillColor( 1, 1, 1 )
+    coupons[lastC]:insert(txtSubtitle1)
+    
+    local txtInfo = display.newText( obj.info, 100, 40, 200, 180, "Chivo", 16)
+    txtInfo:setFillColor( 0 )
+    coupons[lastC]:insert(txtInfo)
+    
+    -- Guardamos la ultima posicion
+    lastY = lastY + 290
+    
 end
 
 -- Genera un cupon destacado
@@ -826,9 +1141,23 @@ local function clearTempDir()
 end
 
 ---------------------------------------------------------------------------------
--- TIMERS
+-- Notification
 ---------------------------------------------------------------------------------
-function moveElements()
+function notification(event)
+    event.target:setFillColor( .2 ) 
+    local options = {
+        alert = "Bienvenido a Geek Bucket!",
+        sound = "fx/alert.wav",
+        custom = { foo = "geek" }
+    }
+    -- Schedule a notification to occur 60 seconds from now.
+    local notificationId = system.scheduleNotification( 10, options )
+
+    -- The app's launch arguments will provide a notification event if this app was started
+    -- when the user tapped on a notification. You must call the notification listener manually.
+    if launchArgs and launchArgs.notification then
+        onNotification( launchArgs.notification )
+    end
 end
 
 ---------------------------------------------------------------------------------
@@ -837,11 +1166,9 @@ end
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
     -- Agregamos el home
+    idComer = event.params.idComer
 	local screenGroup = self.view
     screenGroup:insert(homeScreen)
-    
-    -- Height status bar
-    local h = display.topStatusBarContentHeight
     
     -- Gradiente del toolbar
     local titleGradient = {
@@ -885,36 +1212,55 @@ function scene:createScene( event )
     homeScreen:insert(lineBar)
     
     btnMenu = display.newImage("img/btn/btnMenuGo.png", true) 
-	btnMenu.x = 45
+	btnMenu.x = 35
 	btnMenu.y = 30 + h
 	homeScreen:insert(btnMenu)
     btnMenu:addEventListener( "tap", showMenu )
     
-    -- Menu Toolbar Group
-    menuGrp = display.newGroup()
-    homeScreen:insert(menuGrp)
+    -- Temporal notification
+    local bgNav = display.newRect(homeScreen, 230, 30 + h, 80, 40 )
+    bgNav:setFillColor( 0 )
+    bgNav:addEventListener( "tap", notification )
     
     title = display.newText( "", 230, 30 + h, "Chivo", 22)
     title:setFillColor( .8, .8, .8 )
-    menuGrp:insert(title)
-
-    local fav = display.newImage("img/btn/btnMenuStar.png", true) 
-	fav.x = intW - 90
-	fav.y = 30 + h
-	menuGrp:insert(fav)
-    fav:addEventListener( "tap", showFav )
-
-    local search = display.newImage("img/btn/btnMenuMapa.png", true) 
-	search.x = intW - 30
-	search.y = 30 + h
-	menuGrp:insert(search)
-    search:addEventListener( "tap", showMap )
+    homeScreen:insert(title)
     
-    local filter = display.newImage("img/btn/btnMenuFilter.png", true) 
-	filter.x = intW + 30
+    filter = display.newImage("img/btn/btnMenuFilter.png", true) 
+	filter.x = intW - 95
 	filter.y = 30 + h
-	menuGrp:insert(filter)
+    filter.alpha = .5
+	homeScreen:insert(filter)
     filter:addEventListener( "tap", showMenuFilter )
+    
+    local btnMenuR = display.newImage("img/btn/btnMenuGo.png", true) 
+	btnMenuR.x = intW - 35
+	btnMenuR.y = 30 + h
+	homeScreen:insert(btnMenuR)
+    btnMenuR:addEventListener( "tap", showMenuR )
+    
+    -- Navigation Days
+    navGrp = display.newGroup()
+    -- navGrp.alpha = 0
+    homeScreen:insert(navGrp)
+    local bgNav = display.newRect(navGrp, midW, (95 + h), intW, 60 )
+    bgNav:setFillColor( {
+        type = 'gradient',
+        color1 = { .6 }, 
+        color2 = { .8 },
+        direction = "bottom"
+    } )
+    titleNav = display.newText( "", 240, 95 + h, "Chivo", 22)
+    titleNav:setFillColor( 0 )
+    navGrp:insert(titleNav)
+    local navArrowR = display.newImage(navGrp, "img/btn/navArrowR.png", true) 
+	navArrowR.x = intW - 35
+	navArrowR.y = (95 + h)
+    navArrowR:addEventListener( "tap", agendaR )
+    navArrowL = display.newImage(navGrp, "img/btn/navArrowL.png", true) 
+	navArrowL.x = 35
+	navArrowL.y = (95 + h)
+    navArrowL:addEventListener( "tap", agendaL )
     
     -- Creamos la mascara
     mask = display.newRect( display.contentCenterX, display.contentCenterY, intW, intH )
@@ -923,7 +1269,7 @@ function scene:createScene( event )
     homeScreen:insert(mask)
     mask:addEventListener( "tap", hideMenu )
     
-    -- Create submenu bar
+    -- Create filtro
     subMenuGrp = display.newGroup()
     homeScreen:insert(subMenuGrp)
     bgFloatMenu = display.newRoundedRect( intW - 120, (65 + h), 260, 400, 10 )
@@ -931,6 +1277,56 @@ function scene:createScene( event )
     subMenuGrp.alpha = 0
     bgFloatMenu:setFillColor( 0 ) 
 	subMenuGrp:insert(bgFloatMenu)
+    
+    local filterTmp = display.newImage(subMenuGrp, "img/btn/btnMenuFilter.png", true) 
+	filterTmp.x = intW - 95
+	filterTmp.y = 30 + h
+    
+    -- Menu Derecho
+    menuRGrp = display.newGroup()
+    homeScreen:insert(menuRGrp)
+    local bgFloatMenuR = display.newRoundedRect(menuRGrp, intW - 90, (65 + h), 200, 190, 10 )
+    bgFloatMenuR.anchorY = 0
+    menuRGrp.alpha = 0
+    bgFloatMenuR:setFillColor( 0 ) 
+    
+    local menuGoTmp = display.newImage(menuRGrp, "img/btn/btnMenuGo.png", true) 
+	menuGoTmp.x = intW - 35
+	menuGoTmp.y = 30 + h
+    
+    bgSubMenuR[1] = display.newRect(menuRGrp, intW - 90, (95 + h), 180, 50 )
+    bgSubMenuR[1]:setFillColor( .2 ) 
+    bgSubMenuR[1].alpha = .1
+    bgSubMenuR[1].type = 'Favoritos'
+    bgSubMenuR[1]:addEventListener( "tap", showFav )
+    local imgR1 = display.newImage(menuRGrp, "img/btn/btnMenuStar.png", true) 
+    imgR1.x, imgR1.y = intW - 145, (95 + h)
+    local descR1 = display.newText( menuRGrp, "Favoritos", intW - 60, (95 + h), 100, 18, "Chivo", 16)
+    descR1:setFillColor( .8, .8, .8 )
+    local lineR1 = display.newRect(menuRGrp, intW - 90, (95 + h) + 30, 150, 1 )
+    lineR1.alpha = .5
+    
+    bgSubMenuR[2] = display.newRect(menuRGrp, intW - 90, (155 + h), 180, 50 )
+    bgSubMenuR[2]:setFillColor( .2 ) 
+    bgSubMenuR[2].alpha = .1
+    bgSubMenuR[2].type = 'Busqueda'
+    bgSubMenuR[2]:addEventListener( "tap", showComer )
+    local imgR2 = display.newImage(menuRGrp, "img/btn/btnMenuSearch.png", true) 
+    imgR2.x, imgR2.y = intW - 145, (155 + h)
+    local descR2 = display.newText( menuRGrp, "Comercios", intW - 60, (155 + h), 100, 18, "Chivo", 16)
+    descR2:setFillColor( .8, .8, .8 )
+    local lineR2 = display.newRect(menuRGrp, intW - 90, (155 + h) + 30, 150, 1 )
+    lineR2.alpha = .5
+    
+    bgSubMenuR[3] = display.newRect(menuRGrp, intW - 90, (215 + h), 180, 50 )
+    bgSubMenuR[3]:setFillColor( .2 ) 
+    bgSubMenuR[3].alpha = .1
+    bgSubMenuR[3].type = 'Mapa'
+    bgSubMenuR[3]:addEventListener( "tap", getMenuR )
+    local imgR3 = display.newImage(menuRGrp, "img/btn/btnMenuMapa.png", true) 
+    imgR3.x, imgR3.y = intW - 145, (215 + h)
+    local descR3 = display.newText( menuRGrp, "Cerca de Mi", intW - 60, (215 + h), 100, 18, "Chivo", 16)
+    descR3:setFillColor( .8, .8, .8 )
     
     --Creamos la pantalla del Menu
     settings = DBManager.getSettings()
@@ -944,14 +1340,19 @@ function scene:createScene( event )
     loading.x = midW
     loading.y = midH 
     loadingGrp:insert(loading)
-    local title = display.newText( "Cargando, por favor espere...", midW, midH+50, "Chivo", 16)
-    title:setFillColor( .3, .3, .3 )
-    loadingGrp:insert(title)
+    titleLoading = display.newText( "", midW, midH+50, "Chivo", 16)
+    titleLoading:setFillColor( .3, .3, .3 )
+    loadingGrp:insert(titleLoading)
     
     clearTempDir()
     if networkConnection(true) then
         RestManager.getSubmenus()
-        loadBy(1)
+        if idComer > 0 then
+            loadComercio(idComer)
+        else
+            title.text = "Agenda"
+            loadBy(1)
+        end
     end
 end
 

@@ -34,13 +34,21 @@ local dbManager = {}
 		return 1
 	end
 
+    dbManager.updateIdComer = function(idComer)
+		openConnection( )
+        local query = ''
+        query = "UPDATE config SET idComer = "..idComer
+        db:exec( query )
+		closeConnection( )
+	end
+
     dbManager.updateUser = function(idApp, email, password, name, fbId)
 		openConnection( )
         local query = ''
         if fbId == '' then
-            query = "UPDATE config SET idApp = "..idApp..", email = '"..email.."', password = '"..password.."';"
+            query = "UPDATE config SET idApp = "..idApp..", email = '"..email.."', password = '"..password.."', idComer = 0;"
         else
-            query = "UPDATE config SET idApp = "..idApp..", email = '"..email.."', name = '"..name.."', fbId = '"..fbId.."';"
+            query = "UPDATE config SET idApp = "..idApp..", email = '"..email.."', name = '"..name.."', fbId = '"..fbId.."', idComer = 0;"
         end
         db:exec( query )
 		closeConnection( )
@@ -57,7 +65,7 @@ local dbManager = {}
 	dbManager.setupSquema = function()
 		openConnection( )
 		
-		local query = "CREATE TABLE IF NOT EXISTS config (id INTEGER PRIMARY KEY, idApp INTEGER, email TEXT, password TEXT, name TEXT, fbId TEXT, url TEXT);"
+		local query = "CREATE TABLE IF NOT EXISTS config (id INTEGER PRIMARY KEY, idApp INTEGER, email TEXT, password TEXT, name TEXT, fbId TEXT, idComer TEXT, url TEXT);"
 		db:exec( query )
 
         -- Return if have connection
@@ -71,7 +79,9 @@ local dbManager = {}
 		end
         
         -- Populate config
-        query = "INSERT INTO config VALUES (1, 0, '', '', '', '', 'http://godeals.mx/');"
+        query = "INSERT INTO config VALUES (1, 0, '', '', '', '', 0, 'http://192.168.1.197/godeals/');"
+        --query = "INSERT INTO config VALUES (1, 0, '', '', '', '', 0, 'http://godeals.mx/');"
+    
         
 		db:exec( query )
     

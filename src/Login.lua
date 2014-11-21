@@ -99,7 +99,8 @@ end
 function gotoHome()
     storyboard.gotoScene( "src.Home", {
         time = 400,
-        effect = "crossFade"
+        effect = "crossFade",
+        params = { idComer = idComer }
     })
 end
 

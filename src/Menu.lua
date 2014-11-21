@@ -9,7 +9,7 @@ function Menu:new()
     local fxTap = audio.loadSound( "fx/click.wav")
     
     local opts = {
-        {'btnMenuAll', 'Todo'},   --  Opcion Todo
+        {'btnMenuAll', 'Agenda'},   --  Opcion Todo
         {'btnMenuEventos', 'Eventos'},   --  Opcion Eventos
         {'btnMenuEntretenimiento', 'Entretenimiento'},   --  Opcion Entretenimiento
         {'btnMenuProductos', 'Productos y Servicios'},   --  Opcion Productos
@@ -40,6 +40,12 @@ function Menu:new()
         end
     end
     
+    function self:clearSelMenu()
+        for z = 1, #menuTipo, 1 do 
+            if menuTipo[z].alpha > .2 then menuTipo[z].alpha = .1 end
+        end
+    end
+    
     function tapMenu(event)
         -- Print color menu
         local menu = event.target
@@ -65,6 +71,7 @@ function Menu:new()
                 
             -- Load data
             if menu.type == 7 then
+                showAgendaBar(false)
                 showFilter()
                 loadDirectory()
             elseif menu.type == 8 then -- Cerrar session
@@ -86,21 +93,33 @@ function Menu:new()
             maskAvatar = 'Max'
         end
         
-            
-        local function networkListenerFB( event )
-            -- Verificamos el callback activo
-            if ( event.isError ) then
-            else
-                local mask = graphics.newMask( "img/bgk/maskAvatar"..maskAvatar..".jpg" )
-                event.target.x = 90
-                event.target.y = h + 60
-                event.target:setMask( mask )
-                scrollMenu:insert( event.target )
+        
+        local path = system.pathForFile( "avatarFb"..settings.fbId, system.TemporaryDirectory )
+        local fhd = io.open( path )
+        if fhd then
+            fhd:close()
+            local mask = graphics.newMask( "img/bgk/maskAvatar"..maskAvatar..".jpg" )
+            local avatar = display.newImage("avatarFb"..settings.fbId, system.TemporaryDirectory )
+            avatar.x = 90
+            avatar.y = h + 60
+            avatar:setMask( mask )
+            scrollMenu:insert( avatar )
+        else
+            local function networkListenerFB( event )
+                -- Verificamos el callback activo
+                if ( event.isError ) then
+                else
+                    local mask = graphics.newMask( "img/bgk/maskAvatar"..maskAvatar..".jpg" )
+                    event.target.x = 90
+                    event.target.y = h + 60
+                    event.target:setMask( mask )
+                    scrollMenu:insert( event.target )
+                end
             end
+            display.loadRemoteImage( "http://graph.facebook.com/".. settings.fbId .."/picture?type=large&"..sizeAvatar, 
+                "GET", networkListenerFB, "avatarFb"..settings.fbId, system.TemporaryDirectory )
         end
-        print("http://graph.facebook.com/".. settings.fbId .."/picture?type=normal")
-        display.loadRemoteImage( "http://graph.facebook.com/".. settings.fbId .."/picture?type=large&"..sizeAvatar, 
-            "GET", networkListenerFB, "avatarFb", system.TemporaryDirectory ) 
+         
         
         local txt1 = display.newText( settings.name, 270, h + 45, 200, 27, "Chivo", 24)
         txt1:setFillColor( 1, 1, 1 )
