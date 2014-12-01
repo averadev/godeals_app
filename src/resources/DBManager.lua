@@ -34,6 +34,22 @@ local dbManager = {}
 		return 1
 	end
 
+	dbManager.getIdComer = function()
+		local result = {}
+		openConnection( )
+		for row in db:nrows("SELECT * FROM config;") do
+            local idComer = tonumber(row.idComer)
+			if idComer > 0 then
+                query = "UPDATE config SET idComer = 0"
+                db:exec( query )
+            end
+		    closeConnection( )
+			return  row.idComer
+		end
+		closeConnection( )
+		return 0
+	end
+
     dbManager.updateIdComer = function(idComer)
 		openConnection( )
         local query = ''
@@ -79,8 +95,8 @@ local dbManager = {}
 		end
         
         -- Populate config
-        query = "INSERT INTO config VALUES (1, 0, '', '', '', '', 0, 'http://192.168.1.197/godeals/');"
-        --query = "INSERT INTO config VALUES (1, 0, '', '', '', '', 0, 'http://godeals.mx/');"
+        --query = "INSERT INTO config VALUES (1, 0, '', '', '', '', 0, 'http://192.168.1.197/godeals/');"
+        query = "INSERT INTO config VALUES (1, 0, '', '', '', '', 0, 'http://godeals.mx/');"
     
         
 		db:exec( query )

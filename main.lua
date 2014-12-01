@@ -18,7 +18,7 @@ storyboard = require "storyboard"
 
 -- Create and change scene
 local isUser = DBManager.setupSquema()
-local idComer = 10
+local idComer = DBManager.getIdComer()
 --DBManager.updateUser(1, "mrfeto@gmail.com", '', 'Alberto Vera', '10152713865899218', '') -- Temporal
 
 
@@ -34,7 +34,7 @@ end
 local onNotification = function( event )
     print( event.name ) -- ==> "notification"
     if event.custom then
-        print( event.custom.foo ) -- ==> "bar"
+        loadComercio(10)
     end
 end 
 Runtime:addEventListener( "notification", onNotification )

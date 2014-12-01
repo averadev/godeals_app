@@ -22,7 +22,7 @@ local homeScreen = display.newGroup()
 
 -- Objects
 local scrollView, menuGrp, menuRGrp, subMenuGrp, navGrp, settings, titleLoading, mask 
-local btnMenu, loading, title, loadingGrp, bgFloatMenu, titleNav, navArrowL, filter
+local btnMenu, loading, title, loadingGrp, bgFloatMenu, titleNav, navArrowL, bgNav, filter
 local svHeightY = {}
 local coupons = {}
 local imageItems = {}
@@ -152,6 +152,8 @@ end
 
 
 function loadComercio(idComer)
+    bgNav:setFillColor( 0 )
+    title.text = ""
     currentPage = 0
     showAgendaBar(false)
     cleanHome()
@@ -598,8 +600,8 @@ function showAgendaBar(bool)
         navGrp.alpha = 1
         navArrowL.alpha = .3
         currentAgenda = 0
-        scrollView.height = intH - (123 + h)
-        scrollView.y = (midH + ((125 + h)/2))
+        scrollView.height = intH - (133 + h)
+        scrollView.y = (midH + ((135 + h)/2))
     else
         navGrp.alpha = 0
         scrollView.height = intH - (63 + h)
@@ -617,52 +619,50 @@ function loadComerio(comercio)
     
     -- Generamos contenedor
     local lastB = 1
-    banners[lastB] = display.newContainer( 444, 284 )
-    banners[lastB].index = lastB
+    lastY = lastY + 15
+    banners[lastB] = display.newContainer( 444, 400 )
+    banners[lastB].index = lastC
     banners[lastB].x = midW
-    banners[lastB].y = lastY + 165
+    banners[lastB].y = lastY + 166
     scrollView:insert( banners[lastB] )
     
-    -- Agregamos rectangulo base
-    local maxShape = display.newRect( 0, 0, 444, 284 )
-    maxShape:setFillColor( 1, 1, 1, .7 )
-    banners[lastB]:insert( maxShape )
+    local bg = display.newImage(banners[lastB], "img/btn/tmpComer.jpg", true) 
+	bg.x, bg.y = 0, 0
     
-    -- Agregamos rectangulo alfa al pie
-    local maxBottom = display.newRect( 0, -100, 440, 80 )
-    maxBottom:setFillColor( 0, 0, 0, .7 )
-    banners[lastB]:insert( maxBottom )
+    local shape = display.newRect(banners[lastB], 0, -110, 440, 90 )
+    shape:setFillColor( 1, .4 )
+    local square1 = display.newRect(banners[lastB], 0, -155, 440, 2 ) 
+    square1:setFillColor( .7, .5 )
+    local square2 = display.newRect(banners[lastB], 0, -65, 440, 2 ) 
+    square2:setFillColor( .7, .5 )
+    local square3 = display.newRect(banners[lastB], -219, -110, 2, 90 ) 
+    square3:setFillColor( .7, .5 )
+    local square4 = display.newRect(banners[lastB], 219, -110, 2, 90 ) 
+    square4:setFillColor( .7, .5 )
     
-    local txtTitle = display.newText( comercio.name, 20, -100, 440, 46,  "Chivo", 25)
-    txtTitle:setFillColor( .4, .81, 0 )
-    banners[lastB]:insert(txtTitle)
-    local txtSubtitle1 = display.newText( comercio.categoryName, 20, -65, 435, 60, "Chivo", 18)
-    txtSubtitle1:setFillColor( 1, 1, 1 )
-    banners[lastB]:insert(txtSubtitle1)
-    
-    local txtInfo = display.newText( comercio.info, 100, 40, 200, 180, "Chivo", 16)
-    txtInfo:setFillColor( 0 )
-    banners[lastB]:insert(txtInfo)
-    
-    -- Get Logo
+    -- Agregamos logo
     local path = system.pathForFile( comercio.image, system.TemporaryDirectory )
     local fhd = io.open( path )
     if fhd then
         fhd:close()
-        local logo = display.newImage(banners[lastB], comercio.image, system.TemporaryDirectory )
-        logo.x = -120
-        logo.y = 40
-        logo.width = 200
-        logo.height  = 200
+        local mask = graphics.newMask( "img/bgk/maskAvatar.jpg" )
+        local logo = display.newImage(banners[1], comercio.image, system.TemporaryDirectory )
+        logo.x = -160
+        logo.y = -110
+        logo.width = 80
+        logo.height  = 80
+        logo:setMask( mask )
     else
         local function networkListenerComer( event )
             if ( event.isError ) then
             else
-                event.target.x = -120
-                event.target.y = 40
-                event.target.width = 200
-                event.target.height  = 200
-                banners[lastB]:insert( event.target )
+                local mask = graphics.newMask( "img/bgk/maskAvatar.jpg" )
+                event.target.x = -160
+                event.target.y = -1100
+                event.target.width = 80
+                event.target.height  = 80
+                event.target:setMask( mask )
+                banners[1]:insert( event.target )
             end
         end
 
@@ -671,33 +671,41 @@ function loadComerio(comercio)
         "GET", networkListenerComer, comercio.image, system.TemporaryDirectory ) 
     end
     
+    local txtTitle = display.newText( comercio.name, 45, -120, 300, 30,  "Chivo", 25)
+    txtTitle:setFillColor( .1 )
+    banners[lastB]:insert(txtTitle)
+    local txtSubtitle1 = display.newText( comercio.categoryName, 30, -90, 270, 25, "Chivo", 18)
+    txtSubtitle1:setFillColor( .2 )
+    banners[lastB]:insert(txtSubtitle1)
+    
+    -- Footer
+    local shapeL = display.newRect(banners[lastB], 0, 75, 440, 60 )
+    shapeL:setFillColor( 0, .7 )
+    local icon1 = display.newImage(banners[lastB], "img/btn/iconTel.png", true) 
+	icon1.x, icon1.y = -160, 75
+    local txtTelefono = display.newText( comercio.phone, -20, 75, 200, 25, "Chivo", 25)
+    txtTelefono:setFillColor( 1 )
+    banners[lastB]:insert(txtTelefono)
+    
+    local shapeL = display.newRect(banners[lastB], 0, 135, 440, 60 )
+    shapeL:setFillColor( 0, .7 )
+    local icon1 = display.newImage(banners[lastB], "img/btn/iconPlace.png", true) 
+	icon1.x, icon1.y = -160, 135
+    local txtTelefono = display.newText( comercio.address, -20, 135, 200, 40, "Chivo", 17)
+    txtTelefono:setFillColor( 1 )
+    banners[lastB]:insert(txtTelefono)
+    
+    local dotted1 = display.newImage("img/btn/dottedLine.png")
+    dotted1.x, dotted1.y = 0, 105
+    banners[lastB]:insert( dotted1 )
+    
+    local dotted2 = display.newImage("img/btn/dottedLine2.png")
+    dotted2.x, dotted2.y = 0, 193
+    dotted2.alpha = .5
+    banners[lastB]:insert( dotted2 )
+    
     -- Guardamos la ultima posicion
-    lastY = lastY + 250
-    
-    -- Generamos contenedor phone y direccion
-    lastB = 2
-    banners[lastB] = display.newContainer( 444, 150 )
-    banners[lastB].index = lastB
-    banners[lastB].x = midW
-    banners[lastB].y = lastY + 165
-    scrollView:insert( banners[lastB] )
-    
-    local iconPhone = display.newImage(banners[lastB], "img/btn/iconComer2.png", true) 
-	iconPhone.x = -180
-	iconPhone.y = -50
-    local txtPhone = display.newText( comercio.phone, 40, -35, 350, 45, "Chivo", 20)
-    txtPhone:setFillColor( 0 )
-    banners[lastB]:insert(txtPhone)
-    
-    local iconPlace = display.newImage(banners[lastB], "img/btn/iconComer1.png", true) 
-	iconPlace.x = -180
-	iconPlace.y = 20
-    local txtPlace = display.newText( comercio.address, 40, 25, 350, 60, "Chivo", 17)
-    txtPlace:setFillColor( 0 )
-    banners[lastB]:insert(txtPlace)
-    
-    -- Guardamos la ultima posicion
-    lastY = lastY + 220
+    lastY = lastY + 360
     
 end
     
@@ -835,6 +843,10 @@ function buildItems()
         noPackage = noPackage + 1
         loadImage((noPackage * 10) - 9)
     else
+        if navGrp.alpha == 1 then
+            lastY = lastY + 70
+        end
+        
         -- Create Space
         coupons[#coupons + 1] = display.newContainer( 444, 40 )
         coupons[#coupons].x = midW
@@ -885,27 +897,31 @@ function loadTxtBanner(dateFormat)
 end
 
 function setBanner(typeBanner)
-    -- Bg
+    -- Counter
     local lastC = #banners + 1
+    if #banners == 0 then lastY = lastY + 20 end
     
     -- Generamos contenedor
-    banners[lastC] = display.newContainer( 480, 80 )
+    banners[lastC] = display.newContainer( 480, 50 )
     banners[lastC].index = lastC
     banners[lastC].x = midW
-    banners[lastC].y = lastY + 40
+    banners[lastC].y = lastY + 68
     scrollView:insert( banners[lastC] )
     
+    local shapeL = display.newRect( -40, 0, 360, 50 )
+    shapeL:setFillColor( 0, .59, 0 )
+    banners[lastC]:insert( shapeL )
+    local shapeR = display.newRect( 180, 0, 80, 50 )
+    shapeR:setFillColor( 0, .69, 0 )
+    banners[lastC]:insert( shapeR )
     
-    
-    
-    local bgBanner = display.newImage("img/btn/bgBanner.png", true) 
-	bgBanner.x = 0
-	bgBanner.y = 20
-    banners[lastC]:insert( bgBanner )
+    local icon = display.newImage(banners[lastC], "img/btn/iconCalendar.png", true) 
+	icon.x = 180
+	icon.y = 0
     
     -- Texto
-    local txtTitle = display.newText( typeBanner, 0, 15, "Chivo", 20)
-    txtTitle:setFillColor( 0 )
+    local txtTitle = display.newText( typeBanner, 0, 5, 360, 30, "Chivo", 22)
+    txtTitle:setFillColor( 1 )
     banners[lastC]:insert( txtTitle )
     
     lastY = lastY + 70
@@ -922,51 +938,98 @@ function setComerCoupon(obj)
     
     -- Add Space
     if #coupons > 0 then
-        lastY = lastY + 25
+        lastY = lastY + 20
     else
-        lastY = lastY + 5
+        lastY = lastY + 30
     end
     
     -- Generamos contenedor
-    coupons[lastC] = display.newContainer( 444, 284 )
+    coupons[lastC] = display.newContainer( 444, 330 )
     coupons[lastC].index = lastC
     coupons[lastC].x = midW
-    coupons[lastC].idComer = obj.idComer
-    coupons[lastC].y = lastY + 165
+    coupons[lastC].y = lastY + 170
     scrollView:insert( coupons[lastC] )
-    coupons[lastC]:addEventListener( "tap", showComercio )
     
-    -- Agregamos rectangulo base
-    local maxShape = display.newRect( 0, 0, 444, 284 )
-    maxShape:setFillColor( 1, 1, 1, .7 )
-    coupons[lastC]:insert( maxShape )
+    local bg = display.newImage(coupons[lastC], "img/btn/tmpComer.jpg", true) 
+	bg.x, bg.y = 0, 0
     
-    -- Agregamos imagen
+    -- Agregamos logo
+    if not (obj.banner == '') then
+        local yBanner = lastY + 170
+        local path = system.pathForFile( obj.banner, system.TemporaryDirectory )
+        local fhd = io.open( path )
+        if fhd then
+            fhd:close()
+            local image = display.newImage( obj.banner, system.TemporaryDirectory )
+            image.x = 0
+            image.y = 0
+            coupons[lastC]:insert( image )
+        else
+            local function networkListenerComer( event )
+                if ( event.isError ) then
+                else
+                    event.target.x = 0
+                    event.target.y = 0
+                    event.target:setMask( mask )
+                    coupons[lastC]:insert( event.target )
+                    event.target:toBack()
+                    bg:toBack()
+                end
+            end
+
+            display.loadRemoteImage( 
+            settings.url..'assets/img/app/comercio/'..obj.banner, 
+            "GET", networkListenerComer, obj.banner, system.TemporaryDirectory ) 
+        end
+    end
+    local shape = display.newRect(coupons[lastC], 0, -110, 440, 90 )
+    shape:setFillColor( 1, .4 )
+    local square1 = display.newRect(coupons[lastC], 0, -155, 440, 2 ) 
+    square1:setFillColor( .7, .5 )
+    local square2 = display.newRect(coupons[lastC], 0, -65, 440, 2 ) 
+    square2:setFillColor( .7, .5 )
+    local square3 = display.newRect(coupons[lastC], -219, -110, 2, 90 ) 
+    square3:setFillColor( .7, .5 )
+    local square4 = display.newRect(coupons[lastC], 219, -110, 2, 90 ) 
+    square4:setFillColor( .7, .5 )
+    
+    -- Agregamos logo
+    local mask = graphics.newMask( "img/bgk/maskAvatar.jpg" )
     imageItems[obj.id].alpha = 1
-    imageItems[obj.id].x = -120
-    imageItems[obj.id].y = 40
-    imageItems[obj.id].width = 200
-    imageItems[obj.id].height  = 200
+    imageItems[obj.id].x = -160
+    imageItems[obj.id].y = -110
+    imageItems[obj.id].width = 80
+    imageItems[obj.id].height  = 80
+    imageItems[obj.id]:setMask( mask )
     coupons[lastC]:insert( imageItems[obj.id] )
     
-    -- Agregamos rectangulo alfa al pie
-    local maxBottom = display.newRect( 0, -100, 440, 80 )
-    maxBottom:setFillColor( 0, 0, 0, .7 )
-    coupons[lastC]:insert( maxBottom )
-    
-    local txtTitle = display.newText( obj.name, 20, -100, 440, 46,  "Chivo", 25)
-    txtTitle:setFillColor( .4, .81, 0 )
+    local txtTitle = display.newText( obj.name, 45, -120, 300, 30,  "Chivo", 25)
+    txtTitle:setFillColor( .1 )
     coupons[lastC]:insert(txtTitle)
-    local txtSubtitle1 = display.newText( obj.categoryName, 20, -65, 435, 60, "Chivo", 18)
-    txtSubtitle1:setFillColor( 1, 1, 1 )
+    local txtSubtitle1 = display.newText( obj.categoryName, 30, -90, 270, 25, "Chivo", 18)
+    txtSubtitle1:setFillColor( .2 )
     coupons[lastC]:insert(txtSubtitle1)
     
-    local txtInfo = display.newText( obj.info, 100, 40, 200, 180, "Chivo", 16)
-    txtInfo:setFillColor( 0 )
+    -- Footer
+    local shapeL = display.newRect(coupons[lastC], -70, 135, 300, 60 )
+    shapeL:setFillColor( 0, .7 )
+    local shapeR = display.newRect(coupons[lastC], 150, 135, 140, 60 )
+    shapeR:setFillColor( 0, .69, 0, .85 )
+    shapeR.idComer = obj.idComer
+    shapeR:addEventListener( "tap", showComercio )
+    
+    local icon1 = display.newImage(coupons[lastC], "img/btn/iconTel.png", true) 
+	icon1.x, icon1.y = -160, 135
+    local txtTelefono = display.newText( obj.phone, -20, 135, 200, 25, "Chivo", 25)
+    txtTelefono:setFillColor( 1 )
+    coupons[lastC]:insert(txtTelefono)
+    
+    local txtInfo = display.newText( "+ Info", 170, 135, 100, 25, "Chivo", 25)
+    txtInfo:setFillColor( 1 )
     coupons[lastC]:insert(txtInfo)
     
     -- Guardamos la ultima posicion
-    lastY = lastY + 290
+    lastY = lastY + 350
     
 end
 
@@ -1059,7 +1122,7 @@ function setStdCoupon(obj)
     coupons[lastC].index = lastC
     coupons[lastC].x = midW
     coupons[lastC].type = 2
-    coupons[lastC].y = lastY + 110
+    coupons[lastC].y = lastY + 105
     scrollView:insert( coupons[lastC] )
     coupons[lastC]:addEventListener( "tap", showCoupon )
     
@@ -1145,6 +1208,7 @@ end
 ---------------------------------------------------------------------------------
 function notification(event)
     event.target:setFillColor( .2 ) 
+    DBManager.updateIdComer(10)
     local options = {
         alert = "Bienvenido a Geek Bucket!",
         sound = "fx/alert.wav",
@@ -1218,7 +1282,7 @@ function scene:createScene( event )
     btnMenu:addEventListener( "tap", showMenu )
     
     -- Temporal notification
-    local bgNav = display.newRect(homeScreen, 230, 30 + h, 80, 40 )
+    bgNav = display.newRect(homeScreen, 230, 30 + h, 80, 40 )
     bgNav:setFillColor( 0 )
     bgNav:addEventListener( "tap", notification )
     
@@ -1241,26 +1305,27 @@ function scene:createScene( event )
     
     -- Navigation Days
     navGrp = display.newGroup()
-    -- navGrp.alpha = 0
     homeScreen:insert(navGrp)
-    local bgNav = display.newRect(navGrp, midW, (95 + h), intW, 60 )
-    bgNav:setFillColor( {
-        type = 'gradient',
-        color1 = { .6 }, 
-        color2 = { .8 },
-        direction = "bottom"
-    } )
-    titleNav = display.newText( "", 240, 95 + h, "Chivo", 22)
-    titleNav:setFillColor( 0 )
+    
+    local bgTopAgenda = display.newImage(navGrp, "img/btn/bgTopAgenda.jpg", true) 
+    bgTopAgenda.anchorY = 0
+	bgTopAgenda.x = midW
+	bgTopAgenda.y =  (65 + h)
+    
+    titleNav = display.newText( "", 240, 100 + h, "Chivo", 22)
+    titleNav:setFillColor( 1 )
     navGrp:insert(titleNav)
-    local navArrowR = display.newImage(navGrp, "img/btn/navArrowR.png", true) 
-	navArrowR.x = intW - 35
-	navArrowR.y = (95 + h)
-    navArrowR:addEventListener( "tap", agendaR )
+    
+    
     navArrowL = display.newImage(navGrp, "img/btn/navArrowL.png", true) 
-	navArrowL.x = 35
-	navArrowL.y = (95 + h)
+	navArrowL.x = 45
+	navArrowL.y = (100 + h)
     navArrowL:addEventListener( "tap", agendaL )
+    
+    local navArrowR = display.newImage(navGrp, "img/btn/navArrowR.png", true) 
+	navArrowR.x = intW - 45
+	navArrowR.y = (100 + h)
+    navArrowR:addEventListener( "tap", agendaR )
     
     -- Creamos la mascara
     mask = display.newRect( display.contentCenterX, display.contentCenterY, intW, intH )
@@ -1347,11 +1412,13 @@ function scene:createScene( event )
     clearTempDir()
     if networkConnection(true) then
         RestManager.getSubmenus()
-        if idComer > 0 then
-            loadComercio(idComer)
-        else
+        
+        if idComer == 0 or idComer == '0' then
             title.text = "Agenda"
             loadBy(1)
+        else
+            loadComercio(idComer)
+            
         end
     end
 end
