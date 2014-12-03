@@ -1230,7 +1230,6 @@ end
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
     -- Agregamos el home
-    idComer = event.params.idComer
 	local screenGroup = self.view
     screenGroup:insert(homeScreen)
     
@@ -1412,14 +1411,8 @@ function scene:createScene( event )
     clearTempDir()
     if networkConnection(true) then
         RestManager.getSubmenus()
-        
-        if idComer == 0 or idComer == '0' then
-            title.text = "Agenda"
-            loadBy(1)
-        else
-            loadComercio(idComer)
-            
-        end
+        title.text = "Agenda"
+        loadBy(1)
     end
 end
 

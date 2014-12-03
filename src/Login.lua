@@ -97,11 +97,7 @@ end
 -- FUNCTIONS
 ---------------------------------------------------------------------------------
 function gotoHome()
-    storyboard.gotoScene( "src.Home", {
-        time = 400,
-        effect = "crossFade",
-        params = { idComer = idComer }
-    })
+    storyboard.gotoScene( "src.Home", { time = 400, effect = "crossFade" })
 end
 
 local function printTable( t, label, level )
