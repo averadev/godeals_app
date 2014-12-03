@@ -7,7 +7,7 @@
 local launchArgs = ...      -- at the top of your program code
 -- On Open
 local onNotification = function( event )
-    print(event.custom)
+    print("goNoti "..event.custom)
     if event.custom then
         native.showAlert( "Go Deals", "Open", { "OK"})
     end
@@ -15,7 +15,7 @@ end
 -- On Closed
 print(launchArgs)
 if launchArgs and launchArgs.notification then
-    print(launchArgs.notification)
+    print("goNoti "..launchArgs.notification)
     native.showAlert( "Go Deals", "Closed", { "OK"})
  end
 
