@@ -224,6 +224,27 @@ local RestManager = {}
         end
 	end
 
+    RestManager.getAds = function()
+        if networkConnection(true) then
+            local settings = DBManager.getSettings()
+            -- Set url
+            local url = settings.url
+            url = url.."api/getAds/format/json"
+            url = url.."/idApp/"..settings.idApp
+
+            local function callback(event)
+                if ( event.isError ) then
+                else
+                    local data = json.decode(event.response)
+                    DBManager.saveAds(data.items)
+                end
+                return true
+            end
+            -- Do request
+            network.request( url, "GET", callback )  
+        end
+	end
+
     RestManager.getComer = function()
         if networkConnection(true) then
             local settings = DBManager.getSettings()

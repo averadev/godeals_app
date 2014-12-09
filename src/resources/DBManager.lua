@@ -76,12 +76,48 @@ local dbManager = {}
         db:exec( query )
 		closeConnection( )
     end
+    
+	dbManager.saveAds = function(items)
+		openConnection( )
+    
+        -- Delete all
+        query = "DELETE FROM ads WHERE status = 1;"
+        db:exec( query )
+    
+        for row in db:nrows("SELECT id FROM ads;") do
+            for z = 1, #items, 1 do 
+                print(items[z].id.." - "..row.id)
+                if tonumber(items[z].id) == tonumber(row.id) then
+                    items[z] = nil;
+                end
+            end
+		end
+    
+        -- Save update
+        for z = 1, #items, 1 do 
+            if not (items[z] == nil) then
+                query = "INSERT INTO ads VALUES ("
+                        ..items[z].id..",'"
+                        ..items[z].message.."','"
+                        ..items[z].uuid.."','"
+                        ..items[z].latitude.."','"
+                        ..items[z].longitude.."', 1);"
+                db:exec( query )
+            end
+        end
+    
+		closeConnection( )
+		return 1
+	end
 
 	--Setup squema if it doesn't exist
 	dbManager.setupSquema = function()
 		openConnection( )
 		
 		local query = "CREATE TABLE IF NOT EXISTS config (id INTEGER PRIMARY KEY, idApp INTEGER, email TEXT, password TEXT, name TEXT, fbId TEXT, idComer TEXT, url TEXT);"
+		db:exec( query )
+    
+        local query = "CREATE TABLE IF NOT EXISTS ads (id INTEGER PRIMARY KEY, message TEXT, uuid TEXT, latitude TEXT, longitude TEXT, status INTEGER);"
 		db:exec( query )
 
         -- Return if have connection
