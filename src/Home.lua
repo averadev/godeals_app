@@ -1314,7 +1314,6 @@ function scene:createScene( event )
     -- Temporal notification
     bgNav = display.newRect(homeScreen, 230, 30 + h, 80, 40 )
     bgNav:setFillColor( 0 )
-    bgNav:addEventListener( "tap", notification )
     
     title = display.newText( "", 230, 30 + h, "Chivo", 22)
     title:setFillColor( .8, .8, .8 )
