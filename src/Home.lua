@@ -671,6 +671,37 @@ function loadComerio(comercio)
         "GET", networkListenerComer, comercio.image, system.TemporaryDirectory ) 
     end
     
+    -- Agregamos banner
+    if not (comercio.banner == '') then
+        local yBanner = lastY + 170
+        local path = system.pathForFile(comercio.banner, system.TemporaryDirectory )
+        local fhd = io.open( path )
+        if fhd then
+            fhd:close()
+            local image = display.newImage(banners[1], comercio.banner, system.TemporaryDirectory )
+            image.x = 0
+            image.y = 0
+            image:toBack()
+            bg:toBack()
+        else
+            local function networkListenerComer( event )
+                if ( event.isError ) then
+                else
+                    event.target.x = 0
+                    event.target.y = 0
+                    event.target:setMask( mask )
+                    banners[1]:insert( event.target )
+                    event.target:toBack()
+                    bg:toBack()
+                end
+            end
+
+            display.loadRemoteImage( 
+            settings.url..'assets/img/app/comercio/'..comercio.banner, 
+            "GET", networkListenerComer, comercio.banner, system.TemporaryDirectory ) 
+        end
+    end
+    
     local txtTitle = display.newText( comercio.name, 45, -120, 300, 30,  "Chivo", 25)
     txtTitle:setFillColor( .1 )
     banners[lastB]:insert(txtTitle)
@@ -953,7 +984,7 @@ function setComerCoupon(obj)
     local bg = display.newImage(coupons[lastC], "img/btn/tmpComer.jpg", true) 
 	bg.x, bg.y = 0, 0
     
-    -- Agregamos logo
+    -- Agregamos banner
     if not (obj.banner == '') then
         local yBanner = lastY + 170
         local path = system.pathForFile( obj.banner, system.TemporaryDirectory )
@@ -1411,9 +1442,13 @@ function scene:createScene( event )
     clearTempDir()
     if networkConnection(true) then
         RestManager.getSubmenus()
-        RestManager.getAds()
-        title.text = "Agenda"
-        loadBy(1)
+        -- RestManager.getAds()
+        if Globals.idDisplay == 0 then
+            title.text = "Agenda"
+            loadBy(1)
+        else
+            loadComercio(Globals.idDisplay)
+        end
     end
 end
 

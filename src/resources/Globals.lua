@@ -19,5 +19,7 @@ return {
     
     promoCat = 0,
     
+    idDisplay = 0
+    
     
 }

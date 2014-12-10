@@ -7,6 +7,7 @@
 local launchArgs = ...      -- at the top of your program code
 local storyboard = require "storyboard"
 local DBManager = require('src.resources.DBManager')
+local Globals = require('src.resources.Globals')
 
 local isUser = DBManager.setupSquema()
 local isNotification = false
@@ -15,20 +16,16 @@ if launchArgs then
     if launchArgs.androidIntent then
         if launchArgs.androidIntent.extras then
             if launchArgs.androidIntent.extras.type then
-                isNotification = true
+                Globals.idDisplay = launchArgs.androidIntent.extras.beaconId
             end
         end
     end
 end
 
-if not (isNotification) then
-    if isUser then
-        storyboard.gotoScene("src.Home")
-    else
-        storyboard.gotoScene("src.Login")
-    end
+if isUser then
+    storyboard.gotoScene("src.Home")
 else
-    
+    storyboard.gotoScene("src.Login")
 end
 
 
