@@ -3,11 +3,26 @@ local dbManager = {}
 
 	require "sqlite3"
 	local path, db
+    local lfs = require "lfs"
 
 	--Open rackem.db.  If the file doesn't exist it will be created
 	local function openConnection( )
-	    path = system.pathForFile("godeals.db", system.DocumentsDirectory)
-	    db = sqlite3.open( path )     
+        local pathBase = system.pathForFile(nil, system.DocumentsDirectory)
+        if findLast(pathBase, "/data/data") > -1 then
+            local newFile = pathBase:gsub("/app_data", "") .. "/databases/godeals.db"
+            local fhd = io.open( newFile )
+            if fhd then
+                fhd:close()
+                print("Path YES: "..newFile)
+            else
+                print("Path NO: "..newFile)
+                local success = lfs.chdir( pathBase )
+                lfs.mkdir( "databases" )
+            end
+            db = sqlite3.open( newFile )     
+        else
+            db = sqlite3.open( system.pathForFile("godeals.db", system.DocumentsDirectory) )
+        end
 	end
 
 	local function closeConnection( )
@@ -22,6 +37,12 @@ local dbManager = {}
 	        closeConnection()
 	    end
 	end
+
+    -- Find substring
+    function findLast(haystack, needle)
+        local i=haystack:match(".*"..needle.."()")
+        if i==nil then return -1 else return i-1 end
+    end
 
 	dbManager.getSettings = function()
 		local result = {}
