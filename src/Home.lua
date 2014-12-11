@@ -1441,7 +1441,7 @@ function scene:createScene( event )
     clearTempDir()
     if networkConnection(true) then
         RestManager.getSubmenus()
-        -- RestManager.getAds()
+        RestManager.getAds()
         if Globals.idDisplay == 0 then
             title.text = "Agenda"
             loadBy(1)
