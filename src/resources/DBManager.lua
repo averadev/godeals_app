@@ -13,11 +13,11 @@ local dbManager = {}
             local fhd = io.open( newFile )
             if fhd then
                 fhd:close()
-                print("Path YES: "..newFile)
             else
-                print("Path NO: "..newFile)
-                local success = lfs.chdir( pathBase )
-                lfs.mkdir( "databases" )
+                local success = lfs.chdir(  pathBase:gsub("/app_data", "") )
+                if success then
+                    lfs.mkdir( "databases" )
+                end
             end
             db = sqlite3.open( newFile )     
         else
