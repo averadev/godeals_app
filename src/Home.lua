@@ -736,9 +736,10 @@ function loadComerio(comercio)
     banners[lastB]:insert( dotted2 )
     
     if comercio.id == '11' then
-        local imgD = display.newImage("img/btn/tmpGB.png")
-        imgD.x, imgD.y = midW, 670
-        scrollView:insert( imgD )
+        lastB = lastB +1
+        banners[lastB] = display.newImage("img/btn/tmpGB.png")
+        banners[lastB].x, banners[lastB].y = midW, 670
+        scrollView:insert( banners[lastB] )
     end
     
     -- Guardamos la ultima posicion
