@@ -714,7 +714,7 @@ function loadComerio(comercio)
     shapeL:setFillColor( 0, .7 )
     local icon1 = display.newImage(banners[lastB], "img/btn/iconTel.png", true) 
 	icon1.x, icon1.y = -160, 75
-    local txtTelefono = display.newText( comercio.phone, -20, 75, 200, 25, "Chivo", 25)
+    local txtTelefono = display.newText( comercio.phone, -20, 75, 200, 28, "Chivo", 25)
     txtTelefono:setFillColor( 1 )
     banners[lastB]:insert(txtTelefono)
     
@@ -734,6 +734,12 @@ function loadComerio(comercio)
     dotted2.x, dotted2.y = 0, 193
     dotted2.alpha = .5
     banners[lastB]:insert( dotted2 )
+    
+    if comercio.id == '11' then
+        local imgD = display.newImage("img/btn/tmpGB.png")
+        imgD.x, imgD.y = midW, 670
+        scrollView:insert( imgD )
+    end
     
     -- Guardamos la ultima posicion
     lastY = lastY + 360
@@ -1051,11 +1057,11 @@ function setComerCoupon(obj)
     
     local icon1 = display.newImage(coupons[lastC], "img/btn/iconTel.png", true) 
 	icon1.x, icon1.y = -160, 135
-    local txtTelefono = display.newText( obj.phone, -20, 135, 200, 25, "Chivo", 25)
+    local txtTelefono = display.newText( obj.phone, -20, 135, 200, 28, "Chivo", 25)
     txtTelefono:setFillColor( 1 )
     coupons[lastC]:insert(txtTelefono)
     
-    local txtInfo = display.newText( "+ Info", 170, 135, 100, 25, "Chivo", 25)
+    local txtInfo = display.newText( "+ Info", 170, 135, 100, 28, "Chivo", 25)
     txtInfo:setFillColor( 1 )
     coupons[lastC]:insert(txtInfo)
     
@@ -1234,26 +1240,16 @@ local function clearTempDir()
     end
 end
 
----------------------------------------------------------------------------------
--- Notification
----------------------------------------------------------------------------------
-function notification(event)
-    event.target:setFillColor( .2 ) 
-    DBManager.updateIdComer(10)
-    local options = {
-        alert = "Bienvenido a Geek Bucket!",
-        sound = "fx/alert.wav",
-        custom = { foo = "geek" }
-    }
-    -- Schedule a notification to occur 60 seconds from now.
-    local notificationId = system.scheduleNotification( 10, options )
-
-    -- The app's launch arguments will provide a notification event if this app was started
-    -- when the user tapped on a notification. You must call the notification listener manually.
-    if launchArgs and launchArgs.notification then
-        onNotification( launchArgs.notification )
-    end
+local function clsAds(event)
+    t = event.target
+    t:setFillColor( .5 )
+    timer.performWithDelay( 500, function()
+        t:setFillColor( 0 )
+    end, 1 )
+    DBManager.clsAds()
 end
+
+
 
 ---------------------------------------------------------------------------------
 -- OVERRIDING SCENES METHODS
@@ -1314,6 +1310,7 @@ function scene:createScene( event )
     -- Temporal notification
     bgNav = display.newRect(homeScreen, 230, 30 + h, 80, 40 )
     bgNav:setFillColor( 0 )
+    bgNav:addEventListener( "tap", clsAds )
     
     title = display.newText( "", 230, 30 + h, "Chivo", 22)
     title:setFillColor( .8, .8, .8 )

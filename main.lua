@@ -16,7 +16,7 @@ if launchArgs then
     if launchArgs.androidIntent then
         if launchArgs.androidIntent.extras then
             if launchArgs.androidIntent.extras.type then
-                Globals.idDisplay = launchArgs.androidIntent.extras.beaconId
+                Globals.idDisplay = launchArgs.androidIntent.extras.partnerId
             end
         end
     end

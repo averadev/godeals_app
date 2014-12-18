@@ -98,6 +98,14 @@ local dbManager = {}
 		closeConnection( )
     end
     
+    dbManager.clsAds = function(idComer)
+		openConnection( )
+        local query = ''
+        query = "UPDATE ads SET status = 1;"
+        db:exec( query )
+		closeConnection( )
+	end
+    
 	dbManager.saveAds = function(items)
 		openConnection( )
     
